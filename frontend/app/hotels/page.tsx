@@ -392,7 +392,7 @@ export default function HotelsPage() {
             <div className="mb-6 pb-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-gray-900">
-                  {isSearchResult ? `Hotels in ${searchQuery}` : 'Stay Serene Retreats'}
+                  {isSearchResult ? `Hotels in ${searchQuery}` : 'TravIO Hotels'}
                 </h1>
                 <div className="text-right">
                   <div className="text-sm text-gray-500">

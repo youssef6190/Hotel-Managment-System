@@ -89,7 +89,7 @@ function FeaturedHotels() {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {featuredHotels.map((hotel, index) => (
-            <div key={hotel.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
+            <Link key={hotel.id} href={`/hotels/${hotel.id}`} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer transform hover:scale-105">
               {/* Hotel Image */}
               <div className="relative h-48 overflow-hidden">
                 <Image
@@ -181,7 +181,7 @@ function FeaturedHotels() {
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
         
