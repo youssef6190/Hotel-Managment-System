@@ -33,7 +33,7 @@ class Hotel(MongoBaseModel): # Beanie Document model for MongoDB the base class
     tax_number: str   # Integrated under HotelAdmin, can be optional
     review_count: int = 0 # Number of reviews, default to 0
     rating: Optional[float] = None # Average rating, can be None if no reviews exist
-    hotel_admin_id: Optional[PydanticObjectId]   # ID of the hotel admin who manages this hotel
+    hotel_admin_id: Optional[PydanticObjectId] = None   # ID of the hotel admin who manages this hotel
 
 
 # Response model that includes the serialized ID
@@ -42,5 +42,4 @@ class HotelResponse(Hotel):
 
 class HotelDocument(Document, Hotel):
     class Settings:
-        collection = "hotels" # Settings for Beanie Document, specifying the MongoDB collection name
         collection = "hotels" # Settings for Beanie Document, specifying the MongoDB collection name
