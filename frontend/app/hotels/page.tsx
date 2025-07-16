@@ -69,14 +69,32 @@ export default function HotelsPage() {
     try {
       setIsLoading(true);
       setError(null); // Clear any previous errors
-      const data = await HotelAPI.getAllHotels();
+      
+      // Use different API based on user role
+      let data;
+      if (user && (user.role === 'HOTEL_ADMIN' || user.role === 'SUPER_ADMIN')) {
+        console.log(`Fetching hotels for ${user.role}:`, user.id);
+        data = await HotelAPI.getHotelsForAdmin();
+      } else {
+        console.log('Fetching all hotels for public/guest user');
+        data = await HotelAPI.getAllHotels();
+      }
+      
+      console.log('Fetched hotels:', data.length, 'hotels');
       console.log('Fetched hotels with ratings:', data.map(h => ({ 
         name: h.name, 
         rating: h.rating, 
-        review_count: h.review_count 
+        review_count: h.review_count,
+        admin_id: h.admin_id 
       })));
       setHotels(data);
+      
+      // If no hotels found for admin, show helpful message
+      if (data.length === 0 && user && user.role === 'HOTEL_ADMIN') {
+        setError('No hotels assigned to you yet. Contact your system administrator to assign hotels to your account.');
+      }
     } catch (err) {
+      console.error('Error fetching hotels:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsLoading(false);

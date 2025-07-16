@@ -235,7 +235,8 @@ export default function AdminHotelsPage() {
                           type="text"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 text-gray-700"
+                          placeholder='Enter hotel name'
                           required
                         />
                       </div>
@@ -250,7 +251,8 @@ export default function AdminHotelsPage() {
                               ...formData, 
                               location: { ...formData.location, country: e.target.value }
                             })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 text-gray-700 "
+                            placeholder='Enter country name'
                             required
                           />
                         </div>
@@ -263,7 +265,8 @@ export default function AdminHotelsPage() {
                               ...formData, 
                               location: { ...formData.location, city: e.target.value }
                             })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 text-gray-700"
+                            placeholder='Enter city name'
                             required
                           />
                         </div>
@@ -279,7 +282,8 @@ export default function AdminHotelsPage() {
                               ...formData, 
                               contact_info: { ...formData.contact_info, phone: e.target.value }
                             })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 text-gray-700"
+                            placeholder='Enter phone number'
                             required
                           />
                         </div>
@@ -292,7 +296,8 @@ export default function AdminHotelsPage() {
                               ...formData, 
                               contact_info: { ...formData.contact_info, email: e.target.value }
                             })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 text-gray-700"
+                            placeholder='Enter email address'
                             required
                           />
                         </div>
@@ -307,7 +312,7 @@ export default function AdminHotelsPage() {
                             ...formData, 
                             contact_info: { ...formData.contact_info, website: e.target.value }
                           })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700  text-gray-700"
                         />
                       </div>
 
@@ -318,18 +323,19 @@ export default function AdminHotelsPage() {
                             type="text"
                             value={formData.working_hours}
                             onChange={(e) => setFormData({ ...formData, working_hours: e.target.value })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-900"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700  text-gray-700"
                             placeholder="e.g., 9:00 AM - 10:00 PM"
                             required
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">Max Reservations/Day</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-2 ">Max Reservations/Day</label>
                           <input
                             type="number"
                             value={formData.max_reservations_per_day}
                             onChange={(e) => setFormData({ ...formData, max_reservations_per_day: parseInt(e.target.value) })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent  text-gray-700"
+                            placeholder="Enter max reservations per day"
                             min="1"
                             required
                           />
@@ -342,7 +348,7 @@ export default function AdminHotelsPage() {
                           type="text"
                           value={formData.tax_number}
                           onChange={(e) => setFormData({ ...formData, tax_number: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
                           required
                         />
                       </div>
@@ -354,7 +360,8 @@ export default function AdminHotelsPage() {
                             type="number"
                             value={formData.rating}
                             onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
+                            placeholder="Enter rating (1-5)"
                             min="1"
                             max="5"
                             step="0.1"
@@ -366,7 +373,8 @@ export default function AdminHotelsPage() {
                             type="number"
                             value={formData.review_count}
                             onChange={(e) => setFormData({ ...formData, review_count: parseInt(e.target.value) })}
-                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700"
+                            placeholder="Enter review count"
                             min="0"
                           />
                         </div>
@@ -378,14 +386,14 @@ export default function AdminHotelsPage() {
                           type="url"
                           value={formData.gallery[0]}
                           onChange={(e) => setFormData({ ...formData, gallery: [e.target.value] })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-700 text-gray-700"
                         />
                       </div>
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
-                        <div className="grid grid-cols-2 gap-4 p-4 border border-gray-300 rounded-lg">
-                          <label className="flex items-center">
+                        <div className="grid grid-cols-2 gap-4 p-4 border border-gray-700 rounded-lg">
+                          <label className="flex items-center text-black">
                             <input
                               type="checkbox"
                               checked={formData.amenities.gym}
@@ -397,7 +405,7 @@ export default function AdminHotelsPage() {
                             />
                             Gym
                           </label>
-                          <label className="flex items-center">
+                          <label className="flex items-center text-black">
                             <input
                               type="checkbox"
                               checked={formData.amenities.spa}
@@ -409,7 +417,7 @@ export default function AdminHotelsPage() {
                             />
                             Spa
                           </label>
-                          <label className="flex items-center">
+                          <label className="flex items-center text-black">
                             <input
                               type="checkbox"
                               checked={formData.amenities.wifi}
@@ -421,7 +429,7 @@ export default function AdminHotelsPage() {
                             />
                             WiFi
                           </label>
-                          <label className="flex items-center">
+                          <label className="flex items-center text-black">
                             <input
                               type="checkbox"
                               checked={formData.amenities.parking}
@@ -442,7 +450,7 @@ export default function AdminHotelsPage() {
                                 ...formData, 
                                 amenities: { ...formData.amenities, pool_count: parseInt(e.target.value) }
                               })}
-                              className="w-full border border-gray-300 rounded px-3 py-2"
+                              className="w-full border border-gray-300 rounded px-3 py-2 text-gray-700"
                               min="0"
                             />
                           </div>
