@@ -70,6 +70,11 @@ export default function HotelsPage() {
       setIsLoading(true);
       setError(null); // Clear any previous errors
       const data = await HotelAPI.getAllHotels();
+      console.log('Fetched hotels with ratings:', data.map(h => ({ 
+        name: h.name, 
+        rating: h.rating, 
+        review_count: h.review_count 
+      })));
       setHotels(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -88,9 +93,13 @@ export default function HotelsPage() {
     // Star rating filter using actual hotel rating data
     if (filters.starRating.length > 0) {
       filtered = filtered.filter(hotel => {
-        if (!hotel.rating) return false; // Skip hotels without ratings
-        const hotelRating = Math.floor(hotel.rating); // Get whole number rating
-        return filters.starRating.includes(hotelRating);
+        // Only filter hotels that have actual ratings from backend
+        if (hotel.rating) {
+          const hotelRating = Math.floor(hotel.rating);
+          return filters.starRating.includes(hotelRating);
+        }
+        // Skip hotels without real ratings - no dummy data
+        return false;
       });
     }
 
@@ -108,9 +117,11 @@ export default function HotelsPage() {
             case 'swimming pool':
               return hotel.amenities?.pool_count > 0;
             case 'restaurant':
-              return hotel.amenities?.spa; // Using spa as restaurant placeholder
+              // Note: Restaurant amenity not available in backend data - temporarily mapped to spa
+              return hotel.amenities?.spa;
             case 'breakfast included':
-              return hotel.amenities?.wifi; // Using wifi as breakfast placeholder
+              // Note: Breakfast amenity not available in backend data - temporarily mapped to wifi
+              return hotel.amenities?.wifi;
             default:
               return false;
           }
@@ -154,15 +165,65 @@ export default function HotelsPage() {
     });
   };
 
+  // Remove dummy data generation - only use real backend data
+
+  // Get count of hotels for each star rating - only use real backend data
+  const getHotelCountByRating = (rating: number) => {
+    return hotels.filter(hotel => {
+      // Only count hotels with actual ratings from backend
+      if (hotel.rating) {
+        const hotelRating = Math.floor(hotel.rating);
+        return hotelRating === rating;
+      }
+      // Skip hotels without real ratings
+      return false;
+    }).length;
+  };
+
   const getStarRating = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
         key={i}
         className={`w-4 h-4 ${
-          i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+          i < rating ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
         }`}
+        fill={i < rating ? 'currentColor' : 'none'}
       />
     ));
+  };
+
+  // Enhanced star rating function for more precise display
+  const getAccurateStarRating = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    
+    return Array.from({ length: 5 }, (_, i) => {
+      if (i < fullStars) {
+        return (
+          <Star
+            key={i}
+            className="w-4 h-4 text-yellow-400 fill-yellow-400"
+            fill="currentColor"
+          />
+        );
+      } else if (i === fullStars && hasHalfStar) {
+        return (
+          <Star
+            key={i}
+            className="w-4 h-4 text-yellow-400"
+            fill="url(#halfStar)"
+          />
+        );
+      } else {
+        return (
+          <Star
+            key={i}
+            className="w-4 h-4 text-gray-300"
+            fill="none"
+          />
+        );
+      }
+    });
   };
 
   const getAmenityIcon = (amenity: string) => {
@@ -263,7 +324,7 @@ export default function HotelsPage() {
                       <span className={`ml-2 text-sm font-medium ${
                         filters.starRating.includes(rating) ? 'text-blue-700' : 'text-gray-700 group-hover:text-gray-900'
                       }`}>{rating} Star{rating > 1 ? 's' : ''}</span>
-                      <span className="ml-auto text-xs text-gray-500">& up</span>
+                      <span className="ml-auto text-xs text-gray-500">({getHotelCountByRating(rating)})</span>
                     </div>
                   </label>
                 ))}
@@ -478,14 +539,14 @@ export default function HotelsPage() {
                                   <span className="text-sm">{hotel.location.city}, {hotel.location.country}</span>
                                 </div>
 
-                                {/* Rating Display */}
-                                {hotel.rating && (
+                                {/* Rating Display - Only show if available from backend */}
+                                {hotel.rating && hotel.review_count && (
                                   <div className="flex items-center mb-2">
                                     <div className="flex items-center">
-                                      {getStarRating(Math.floor(hotel.rating))}
+                                      {getAccurateStarRating(hotel.rating)}
                                     </div>
-                                    <span className="ml-2 text-sm text-gray-600">
-                                      {hotel.rating.toFixed(1)} {hotel.review_count ? `(${hotel.review_count} reviews)` : ''}
+                                    <span className="ml-2 text-sm text-gray-600 font-medium">
+                                      {hotel.rating.toFixed(1)} ({hotel.review_count} reviews)
                                     </span>
                                   </div>
                                 )}

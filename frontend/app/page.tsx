@@ -7,7 +7,200 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Image from 'next/image';
 import { HotelAPI, Hotel } from '@/lib/hotel';
+import {QuickActions} from "@/components/quick-actions"
 
+// Featured Hotels Component
+function FeaturedHotels() {
+  const [featuredHotels, setFeaturedHotels] = useState<Hotel[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedHotels = async () => {
+      try {
+        const hotels = await HotelAPI.getAllHotels();
+        // Get first 4 hotels as featured or you can add logic to get specific featured hotels
+        setFeaturedHotels(hotels.slice(0, 4));
+      } catch (error) {
+        console.error('Error fetching featured hotels:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedHotels();
+  }, []);
+
+  const getHotelImage = (hotel: Hotel, index: number) => {
+    if (hotel.gallery && hotel.gallery.length > 0) {
+      return hotel.gallery[0];
+    }
+    // Fallback to predefined images
+    const fallbackImages = [
+      '/hotel_image_1.jpg',
+      '/hotel_image_2.jpg', 
+      '/hotel_image_3.jpg',
+      '/hotel_image_4.jpg'
+    ];
+    return fallbackImages[index % fallbackImages.length];
+  };
+
+  const getHotelFeatures = (hotel: Hotel) => {
+    const features = [];
+    if (hotel.amenities.wifi) features.push({ name: 'WiFi', icon: '📶' });
+    if (hotel.amenities.pool_count > 0) features.push({ name: `${hotel.amenities.pool_count} Pool${hotel.amenities.pool_count > 1 ? 's' : ''}`, icon: '🏊' });
+    if (hotel.amenities.gym) features.push({ name: 'Gym', icon: '🏋️' });
+    if (hotel.amenities.spa) features.push({ name: 'Spa', icon: '🧖' });
+    if (hotel.amenities.parking) features.push({ name: 'Parking', icon: '🅿️' });
+    return features;
+  };
+
+  if (loading) {
+    return (
+      <div className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Featured Hotels</h2>
+            <p className="text-lg text-gray-600">Discover our hand-picked selection of premium hotels around the world</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white rounded-lg shadow-lg overflow-hidden animate-pulse">
+                <div className="h-48 bg-gray-300"></div>
+                <div className="p-4">
+                  <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-300 rounded mb-1"></div>
+                  <div className="h-3 bg-gray-300 rounded w-3/4"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-16 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Featured Hotels</h2>
+          <p className="text-lg text-gray-600">Discover our hand-picked selection of premium hotels around the world</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {featuredHotels.map((hotel, index) => (
+            <div key={hotel.id} className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300 group">
+              {/* Hotel Image */}
+              <div className="relative h-48 overflow-hidden">
+                <Image
+                  src={getHotelImage(hotel, index)}
+                  alt={hotel.name}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+                {index === 0 && (
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                      Featured
+                    </span>
+                  </div>
+                )}
+                {index === 1 && (
+                  <div className="absolute top-3 left-3">
+                    <span className="bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                      Popular
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Hotel Info */}
+              <div className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-1 truncate">{hotel.name}</h3>
+                <p className="text-sm text-gray-600 mb-2 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                  </svg>
+                  {hotel.location.city}, {hotel.location.country}
+                </p>
+                
+                {/* Amenities */}
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {getHotelFeatures(hotel).slice(0, 5).map((feature, idx) => (
+                    <span key={idx} className="text-xs text-gray-600 flex items-center gap-1">
+                      <span className="text-sm">{feature.icon}</span>
+                      <span>{feature.name}</span>
+                    </span>
+                  ))}
+                </div>
+                
+                {/* Rating and Price */}
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center">
+                    {hotel.rating && (
+                      <>
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <svg
+                              key={i}
+                              className={`w-4 h-4 ${i < Math.floor(hotel.rating!) ? 'text-yellow-400' : 'text-gray-300'}`}
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-600 ml-1">
+                          ({hotel.rating.toFixed(1)})
+                          {hotel.review_count && (
+                            <span className="ml-1 text-xs text-gray-500">
+                              {hotel.review_count} reviews
+                            </span>
+                          )}
+                        </span>
+                      </>
+                    )}
+                    {!hotel.rating && (
+                      <div className="text-sm text-gray-600">
+                        No rating available
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    {hotel.price_per_night ? (
+                      <p className="text-lg font-bold text-gray-900">
+                        ${hotel.price_per_night}
+                        <span className="text-sm font-normal text-gray-600">/night</span>
+                      </p>
+                    ) : (
+                      <p className="text-lg font-bold text-gray-900">
+                        <span className="text-sm font-normal text-gray-600">Contact for Price</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* View All Hotels Button */}
+        <div className="text-center">
+          <Link 
+            href="/hotels"
+            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-300"
+          >
+            View All Hotels
+            <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 export default function Home() {
   const { isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
@@ -181,6 +374,9 @@ export default function Home() {
           </div>
         </div>
 
+        {/* Featured Hotels Section */}
+        <FeaturedHotels />
+
         {/* Features Section */}
         <div className="py-16 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -246,67 +442,7 @@ export default function Home() {
         </div>
 
         {/* Quick Actions Section - Show for authenticated users */}
-        {isAuthenticated && (
-          <div className="py-16 bg-gray-100">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                  Quick Actions
-                </h2>
-                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                  Access your account features and manage your travel plans
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* Dashboard */}
-                <Link href="/dashboard" className="block">
-                  <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-lg mb-4">
-                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Dashboard</h3>
-                    <p className="text-gray-600">
-                      View your account overview and manage your profile
-                    </p>
-                  </div>
-                </Link>
-
-                {/* Reservations - Show for all authenticated users */}
-                <Link href="/reservations" className="block">
-                  <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-lg mb-4">
-                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">My Reservations</h3>
-                    <p className="text-gray-600">
-                      Manage your bookings and view reservation history
-                    </p>
-                  </div>
-                </Link>
-
-                {/* Browse Hotels */}
-                <Link href="/hotels" className="block">
-                  <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1">
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-lg mb-4">
-                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H9m0 0H5m5 0v-4a1 1 0 011-1h2a1 1 0 011 1v4m-4 0h4" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Browse Hotels</h3>
-                    <p className="text-gray-600">
-                      Discover and search through our collection of hotels
-                    </p>
-                  </div>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+       <QuickActions/>
 
         {/* Newsletter Section */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 py-16">

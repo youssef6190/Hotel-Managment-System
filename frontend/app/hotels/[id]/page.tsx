@@ -19,6 +19,9 @@ export default function HotelDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
+  const [brokenImages, setBrokenImages] = useState<Set<string>>(new Set());
+  const [minRoomPrice, setMinRoomPrice] = useState<number | null>(null);
 
   useEffect(() => {
     if (hotelId) {
@@ -32,12 +35,41 @@ export default function HotelDetailPage() {
       const data = await HotelAPI.getHotelById(hotelId);
       console.log('Hotel data received:', data);
       setHotel(data);
+      
+      // If hotel doesn't have a base price, try to fetch minimum room price
+      if (!data.price_per_night) {
+        await fetchMinRoomPrice(hotelId);
+      }
     } catch (err) {
       console.error('Error fetching hotel:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load hotel';
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchMinRoomPrice = async (hotelId: string) => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(`http://localhost:8000/rooms/hotel/${hotelId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const rooms = await response.json();
+        if (rooms && rooms.length > 0) {
+          const prices = rooms.map((room: any) => room.price_per_night).filter((price: any) => price != null);
+          if (prices.length > 0) {
+            setMinRoomPrice(Math.min(...prices));
+          }
+        }
+      }
+    } catch (err) {
+      console.log('Could not fetch room prices:', err);
     }
   };
 
@@ -62,16 +94,36 @@ export default function HotelDetailPage() {
   // Get available images for the hotel
   const getAvailableImages = (): string[] => {
     if (hotel?.gallery && hotel.gallery.length > 0) {
-      return hotel.gallery;
+      // Filter out any invalid, empty, or broken image URLs
+      return hotel.gallery.filter(img => 
+        img && 
+        img.trim() !== '' && 
+        !img.includes('placeholder') && 
+        !brokenImages.has(img)
+      );
     }
-    // Fallback to available hotel images
-    return [
+    // Fallback to available hotel images, filtering out any that might be placeholders or broken
+    const fallbackImages = [
       '/hotel_image.jpg',
       '/hotel_image_1.jpg', 
       '/hotel_image_2.jpg',
       '/hotel_image_3.jpg',
       '/hotel_image_4.jpg'
     ];
+    return fallbackImages.filter(img => 
+      img && 
+      img.trim() !== '' && 
+      !brokenImages.has(img)
+    );
+  };
+
+  const handleImageError = (imageSrc: string) => {
+    setBrokenImages(prev => new Set(prev).add(imageSrc));
+    // If current image is broken, move to next available image
+    const availableImages = getAvailableImages();
+    if (availableImages.length > 0 && currentImageIndex >= availableImages.length) {
+      setCurrentImageIndex(0);
+    }
   };
 
   const toggleFavorite = () => {
@@ -94,6 +146,31 @@ export default function HotelDetailPage() {
       alert('Link copied to clipboard!');
     }
   };
+
+  const openFullscreen = () => {
+    setIsFullscreenOpen(true);
+  };
+
+  const closeFullscreen = () => {
+    setIsFullscreenOpen(false);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (isFullscreenOpen) {
+      if (e.key === 'Escape') {
+        closeFullscreen();
+      } else if (e.key === 'ArrowLeft') {
+        prevImage();
+      } else if (e.key === 'ArrowRight') {
+        nextImage();
+      }
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isFullscreenOpen]);
 
   if (isLoading) {
     return (
@@ -206,12 +283,20 @@ export default function HotelDetailPage() {
               <div className="flex items-center space-x-1">
                 <div className="flex text-orange-400">
                   {[...Array(5)].map((_, i) => (
-                    <svg key={i} className="h-5 w-5 fill-current" viewBox="0 0 20 20">
+                    <svg 
+                      key={i} 
+                      className={`h-5 w-5 ${
+                        i < Math.floor(hotel.rating || 0) ? 'fill-current' : 'fill-none stroke-current'
+                      }`} 
+                      viewBox="0 0 20 20"
+                    >
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
                 </div>
-                <span className="text-sm text-gray-600 ml-2">(4.9) · 234 reviews</span>
+                <span className="text-sm text-gray-600 ml-2">
+                  ({hotel.rating?.toFixed(1) || 'N/A'}) · {hotel.review_count || 0} reviews
+                </span>
               </div>
             </div>
             <div className="flex space-x-2">
@@ -237,9 +322,22 @@ export default function HotelDetailPage() {
 
         {/* Image Gallery */}
         <div className="mb-8">
-          <div className="relative h-96 rounded-lg overflow-hidden bg-gray-200">
+          <div className="relative w-full rounded-lg overflow-hidden bg-gray-200 cursor-pointer group" style={{ aspectRatio: '16/9', minHeight: '400px', maxHeight: '600px' }} onClick={openFullscreen}>
             {(() => {
               const availableImages = getAvailableImages();
+              if (availableImages.length === 0) {
+                return (
+                  <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                    <div className="text-center text-gray-500">
+                      <svg className="h-16 w-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p>No images available</p>
+                    </div>
+                  </div>
+                );
+              }
+              
               const currentImage = availableImages[currentImageIndex] || availableImages[0];
               
               return (
@@ -247,11 +345,21 @@ export default function HotelDetailPage() {
                   src={currentImage}
                   alt={`${hotel.name} - Image ${currentImageIndex + 1}`}
                   fill
-                  className="object-cover"
+                  className="object-cover hover:scale-105 transition-transform duration-500"
                   priority
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 70vw"
+                  onError={() => handleImageError(currentImage)}
                 />
               );
             })()}
+            
+            {/* Fullscreen icon overlay */}
+            <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center space-x-2">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+              </svg>
+              <span>View Fullscreen</span>
+            </div>
             
             {(() => {
               const availableImages = getAvailableImages();
@@ -296,7 +404,7 @@ export default function HotelDetailPage() {
           {(() => {
             const availableImages = getAvailableImages();
             return availableImages.length > 1 && (
-              <div className="mt-4 flex space-x-2 overflow-x-auto pb-2">
+              <div className="mt-4 flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
                 {availableImages.map((image, index) => (
                   <button
                     key={index}
@@ -310,7 +418,8 @@ export default function HotelDetailPage() {
                       alt={`${hotel.name} thumbnail ${index + 1}`}
                       fill
                       className="object-cover"
-                      sizes="80px"
+                      sizes="(max-width: 768px) 80px, 96px"
+                      onError={() => handleImageError(image)}
                     />
                   </button>
                 ))}
@@ -359,12 +468,21 @@ export default function HotelDetailPage() {
                         <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                           <span className="text-lg">{amenityIcons[key] || '✓'}</span>
                         </div>
-                        <span className="text-sm font-medium">{amenityLabels[key] || key}</span>
+                        <span className="text-sm font-medium">{amenityLabels[key] || key.charAt(0).toUpperCase() + key.slice(1)}</span>
                       </div>
                     );
                   }
                   return null;
                 })}
+                
+                {/* Show message if no amenities are available */}
+                {Object.entries(hotel.amenities).every(([key, value]) => 
+                  key === 'pool_count' ? value === 0 : value === false
+                ) && (
+                  <div className="col-span-full text-center text-gray-500 py-4">
+                    <p>No amenities information available</p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -434,10 +552,26 @@ export default function HotelDetailPage() {
               {/* Pricing Display */}
               <div className="mb-6 p-4 bg-orange-50 rounded-lg">
                 <div className="flex items-baseline">
-                  <span className="text-3xl font-bold text-orange-600">$199</span>
-                  <span className="text-gray-600 ml-1">/night</span>
+                  <span className="text-3xl font-bold text-orange-600">
+                    {hotel.price_per_night 
+                      ? `$${hotel.price_per_night}` 
+                      : minRoomPrice 
+                        ? `From $${minRoomPrice}` 
+                        : 'Contact for Price'
+                    }
+                  </span>
+                  {(hotel.price_per_night || minRoomPrice) && (
+                    <span className="text-gray-600 ml-1">/night</span>
+                  )}
                 </div>
-                <p className="text-sm text-gray-600 mt-1">Best price guaranteed</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {hotel.price_per_night 
+                    ? 'Base room price' 
+                    : minRoomPrice 
+                      ? 'Starting price - varies by room type' 
+                      : 'Price varies by room type and availability'
+                  }
+                </p>
               </div>
               
               {/* Hotel Info */}
@@ -518,6 +652,109 @@ export default function HotelDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Image Modal */}
+      {isFullscreenOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {/* Close button */}
+            <button
+              onClick={closeFullscreen}
+              className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+            >
+              <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Image container */}
+            <div className="relative max-w-7xl max-h-full w-full h-full flex items-center justify-center">
+              {(() => {
+                const availableImages = getAvailableImages();
+                if (availableImages.length === 0) {
+                  return (
+                    <div className="text-center text-white">
+                      <svg className="h-16 w-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p>No images available</p>
+                    </div>
+                  );
+                }
+                
+                const currentImage = availableImages[currentImageIndex] || availableImages[0];
+                
+                return (
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={currentImage}
+                      alt={`${hotel?.name} - Image ${currentImageIndex + 1}`}
+                      fill
+                      className="object-contain"
+                      priority
+                      sizes="100vw"
+                      onError={() => handleImageError(currentImage)}
+                    />
+                  </div>
+                );
+              })()}
+
+              {/* Navigation buttons */}
+              {(() => {
+                const availableImages = getAvailableImages();
+                return availableImages.length > 1 && (
+                  <>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-3 transition-all duration-200"
+                    >
+                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 hover:bg-opacity-75 text-white rounded-full p-3 transition-all duration-200"
+                    >
+                      <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </>
+                );
+              })()}
+
+              {/* Image counter */}
+              {(() => {
+                const availableImages = getAvailableImages();
+                return (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full text-sm">
+                    {currentImageIndex + 1} / {availableImages.length}
+                  </div>
+                );
+              })()}
+
+              {/* Image dots */}
+              {(() => {
+                const availableImages = getAvailableImages();
+                return availableImages.length > 1 && (
+                  <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                    {availableImages.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(index); }}
+                        className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                          index === currentImageIndex ? 'bg-white' : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

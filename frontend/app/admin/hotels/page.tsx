@@ -44,16 +44,29 @@ export default function AdminHotelsPage() {
   const hasAdminAccess = user?.role === 'hotel_admin' || user?.role === 'super_admin';
 
   useEffect(() => {
-    if (hasAdminAccess) {
+    if (hasAdminAccess && user) {
       loadHotels();
     }
-  }, [hasAdminAccess]);
+  }, [hasAdminAccess, user]);
 
   const loadHotels = async () => {
     try {
       setLoading(true);
-      const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/admin`, {
+      
+      // Super admins use the public endpoint, hotel admins use the admin endpoint
+      let endpoint = '/hotels/';
+      let headers = {};
+      
+      if (user?.role === 'super_admin') {
+        // Super admin gets all hotels using public endpoint (no auth required)
+        endpoint = '/hotels/';
+      } else if (user?.role === 'hotel_admin') {
+        // Hotel admin uses admin endpoint with authentication
+        endpoint = '/hotels/admin';
+        headers = await authAPI.getAuthHeadersWithRefresh();
+      }
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${endpoint}`, {
         headers
       });
       
