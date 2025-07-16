@@ -31,6 +31,9 @@ class Hotel(MongoBaseModel): # Beanie Document model for MongoDB the base class
     working_hours: str
     max_reservations_per_day: int
     tax_number: str   # Integrated under HotelAdmin, can be optional
+    review_count: int = 0 # Number of reviews, default to 0
+    rating: Optional[float] = None # Average rating, can be None if no reviews exist
+
 
 # Response model that includes the serialized ID
 class HotelResponse(Hotel):
