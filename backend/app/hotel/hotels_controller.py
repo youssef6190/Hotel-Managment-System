@@ -44,6 +44,30 @@ async def get_all_hotels():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching hotels: {str(e)}")
 
+@router.get("/admin", response_model=List[HotelResponse])
+async def get_hotels_for_admin(
+    current_user: UserDocument = Depends(require_hotel_permission(CRUDOperation.READ))
+):
+    """Get hotels for the current admin - Returns hotels where admin_id matches current user ID"""
+    try:
+        # For SUPER_ADMIN, return all hotels
+        if current_user.role == "SUPER_ADMIN":
+            hotels = await HotelDocument.find_all().to_list()
+        else:
+            # For HOTEL_ADMIN, return only hotels they manage
+            user_object_id = current_user.id
+            hotels = await HotelDocument.find({"admin_id": user_object_id}).to_list()
+        
+        # Convert each hotel document to response model
+        hotel_responses = []
+        for hotel in hotels:
+            hotel_data = hotel.model_dump()
+            hotel_data["id"] = str(hotel.id)
+            hotel_responses.append(HotelResponse(**hotel_data))
+        return hotel_responses
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching admin hotels: {str(e)}")
+
 @router.get("/{hotel_id}", response_model=HotelResponse)
 async def get_hotel(hotel_id: str):
     """Get a hotel by ID - Public access (no authentication required)"""

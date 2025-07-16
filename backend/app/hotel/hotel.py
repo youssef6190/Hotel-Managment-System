@@ -3,7 +3,7 @@ from typing import List, Optional
 from enum import Enum
 from bson import ObjectId
 from common_models.common import MongoBaseModel, PydanticObjectId
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 class Location(MongoBaseModel):
     country: str
@@ -33,7 +33,19 @@ class Hotel(MongoBaseModel): # Beanie Document model for MongoDB the base class
     tax_number: str   # Integrated under HotelAdmin, can be optional
     review_count: int = 0 # Number of reviews, default to 0
     rating: Optional[float] = None # Average rating, can be None if no reviews exist
-    admin_id: Optional[str] = None   # ID of the hotel admin who manages this hotel
+    admin_id: Optional[PydanticObjectId] = None   # ID of the hotel admin who manages this hotel
+
+    @field_validator('admin_id', mode='before')
+    @classmethod
+    def validate_admin_id(cls, v):
+        if v is None or v == "":
+            return None
+        if isinstance(v, str):
+            try:
+                return ObjectId(v)
+            except Exception:
+                return None
+        return v
 
 
 # Response model that includes the serialized ID
