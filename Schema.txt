@@ -1,0 +1,71 @@
+1‑Hotel Management System (POC)
+
+Schema
+
+Reservations   DONE : SCHEMA
+ReservationsId
+  HotelId
+  RoomTypeId             ← instead of specific RoomId to allow inventory logic
+  VisitorId
+  StartTime
+  EndTime
+  Type (bed+breakfast, all_inclusive)
+  Status                 ← added: pending / confirmed / cancelled
+  NumGuests
+  Price
+------------------------------------------
+Users DONE:schema ,
+  Id
+  Name
+  Email
+  Age
+  MobileNumber
+  JobType
+  Gender
+  Role
+-------------------------------------------
+Roles DONE  schema (enum)
+  Viewer (default)
+  HotelAdmin (hotelTaxNumber)     ← validate via regex
+  SuperAdmin
+-------------------
+Hotels done :schema , router , collection, test
+  Id 
+  Name
+  ContactInfo
+  Location (country / city / optional coordinates)
+  Gallery (list of URLs)
+  Amenities
+    (GYM (bool),
+    SPA (bool),
+    Wifi (bool),
+    Parking (bool),
+    PoolCount (int))
+  WorkingHours
+  MaxReservationsPerDay
+  TaxNumber                      ← integrated under HotelAdmin
+--------------------------------
+Room  DONE SCHEMA
+  RoomId
+  HotelId
+  TypeName (Single, Double, Suite)
+  Description
+  Capacity
+  BasePrice
+---------------------------------------
+Availability done schema 
+  HotelId
+  RoomTypeId
+  Date
+  TotalInventory
+  TotalReserved             ← see discussion of availability modelling below
+-----------------------------
+Payments
+  BookingId
+  HotelId
+  Amount
+  Method
+  Status
+  TransactionDate
+-----------------------------------
+
