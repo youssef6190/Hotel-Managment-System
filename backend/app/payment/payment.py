@@ -10,8 +10,8 @@ class Status(Enum):
     PENDING = "pending"
 
 class Payment(MongoBaseModel):
-    reservation_id: PydanticObjectId  # ID of the reservation associated with this payment
-    user_id: Optional[PydanticObjectId] = None  # ID of the user who made the payment
+    reservation_id: Optional[str] = None  # ID of the reservation associated with this payment
+    user_id: Optional[str] = None  # ID of the user who made the payment
     amount: float
     payment_method: str
     payment_status: Status

@@ -11,7 +11,7 @@ class TYPE(Enum):
     
 class Room(MongoBaseModel):
     room_number: int  # Unique identifier for the room within the hotel
-    hotel_id: PydanticObjectId  # ID of the hotel this room belongs to
+    hotel_id:  Optional[str] = None     # ID of the hotel this room belongs to
     type_name: TYPE
     description: str
     max_occupancy: int
