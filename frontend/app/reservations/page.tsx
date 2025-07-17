@@ -54,12 +54,12 @@ export default function ReservationsPage() {
   const [hotelDetails, setHotelDetails] = useState<{[key: string]: Hotel}>({});
   const [roomDetails, setRoomDetails] = useState<{[key: string]: Room}>({});
   
-  // Load data for authenticated guests - moved before early returns
+  // Load data for authenticated users (except viewers)
   useEffect(() => {
     if (isAuthenticated && user?.role !== 'viewer') {
       loadHotels();
       loadReservations().then(loadedReservations => {
-        if (loadedReservations && user?.role === 'guest') {
+        if (loadedReservations && (user?.role === 'guest' || user?.role === 'hotel_admin' || user?.role === 'super_admin')) {
           loadReservationDetails(loadedReservations);
         }
       });
@@ -91,8 +91,8 @@ export default function ReservationsPage() {
           </h1>
           
           <p className="text-gray-600 mb-8 leading-relaxed">
-            To access the reservations page and make hotel bookings, you need to be logged in as a guest. 
-            Please login or create an account to start booking your perfect stay.
+            To access the reservations page and make hotel bookings, you need to be logged in with appropriate permissions. 
+            Please login or create an account to start managing reservations.
           </p>
           
           <div className="space-y-4">
@@ -475,8 +475,8 @@ export default function ReservationsPage() {
                 User ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{user?.id}</span>
               </p>
             </div>
-            {/* Only show "New Reservation" button for guests */}
-            {user?.role === 'guest' && (
+            {/* Show "New Reservation" button for guests, hotel admins, and super admins */}
+            {(user?.role === 'guest' || user?.role === 'hotel_admin' || user?.role === 'super_admin') && (
               <button
                 onClick={() => {
                   setError('');
@@ -506,7 +506,7 @@ export default function ReservationsPage() {
           </div>
         )}
 
-        {/* New Reservation Form Modal - Only for guests */}
+        {/* New Reservation Form Modal - For guests, hotel admins, and super admins */}
         {showNewReservationForm && (user?.role === 'guest' || user?.role === 'hotel_admin'||user?.role === 'super_admin') && (
           <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
