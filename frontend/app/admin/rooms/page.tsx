@@ -3,27 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { authAPI } from '@/lib/auth';
+import { Room, RoomAPI } from '@/lib/room';
+import { Hotel, HotelAPI } from '@/lib/hotel';
 import Header from '@/components/Header';
 import ProtectedRoute from '@/components/ProtectedRoute';
-
-interface Room {
-  id: string;
-  hotel_id: string;
-  room_number: string;
-  type: string;
-  price_per_night: number;
-  capacity: number;
-  description?: string;
-}
-
-interface Hotel {
-  id: string;
-  name: string;
-  location: {
-    country: string;
-    city: string;
-  };
-}
 
 export default function AdminRoomsPage() {
   const { user } = useAuth();
@@ -34,9 +17,9 @@ export default function AdminRoomsPage() {
   const [formData, setFormData] = useState({
     hotel_id: '',
     room_number: '',
-    type: 'single',
+    type_name: 'Single' as 'Single' | 'Double' | 'Suite',
     price_per_night: 0,
-    capacity: 1,
+    max_occupancy: 1,
     description: ''
   });
   const [error, setError] = useState('');
@@ -55,17 +38,8 @@ export default function AdminRoomsPage() {
   const loadRooms = async () => {
     try {
       setLoading(true);
-      const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/rooms/`, {
-        headers
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setRooms(data);
-      } else {
-        setError('Failed to load rooms');
-      }
+      const data = await RoomAPI.getAllRooms();
+      setRooms(data);
     } catch (error) {
       console.error('Failed to load rooms:', error);
       setError('Failed to load rooms');
@@ -76,15 +50,8 @@ export default function AdminRoomsPage() {
 
   const loadHotels = async () => {
     try {
-      const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/`, {
-        headers
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setHotels(data);
-      }
+      const data = await HotelAPI.getAllHotels();
+      setHotels(data);
     } catch (error) {
       console.error('Failed to load hotels:', error);
     }
@@ -96,24 +63,24 @@ export default function AdminRoomsPage() {
     setSuccess('');
 
     try {
-      const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/rooms/`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        setSuccess('Room created successfully!');
-        setShowCreateForm(false);
-        setFormData({ hotel_id: '', room_number: '', type: 'single', price_per_night: 0, capacity: 1, description: '' });
-        loadRooms();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to create room');
-      }
+      // Convert form data to match backend schema
+      const submitData = {
+        hotel_id: formData.hotel_id,
+        room_number: parseInt(formData.room_number) || 0,
+        type_name: formData.type_name,
+        price_per_night: formData.price_per_night,
+        max_occupancy: formData.max_occupancy,
+        description: formData.description
+      };
+      
+      const result = await RoomAPI.createRoom(submitData);
+      setSuccess('Room created successfully!');
+      setShowCreateForm(false);
+      setFormData({ hotel_id: '', room_number: '', type_name: 'Single' as 'Single' | 'Double' | 'Suite', price_per_night: 0, max_occupancy: 1, description: '' });
+      loadRooms();
     } catch (error) {
-      setError('An error occurred while creating the room');
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while creating the room';
+      setError(errorMessage);
     }
   };
 
@@ -121,25 +88,17 @@ export default function AdminRoomsPage() {
     if (!confirm('Are you sure you want to delete this room?')) return;
 
     try {
-      const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/rooms/${roomId}`, {
-        method: 'DELETE',
-        headers
-      });
-
-      if (response.ok) {
-        setSuccess('Room deleted successfully!');
-        loadRooms();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.detail || 'Failed to delete room');
-      }
+      await RoomAPI.deleteRoom(roomId);
+      setSuccess('Room deleted successfully!');
+      loadRooms();
     } catch (error) {
-      setError('An error occurred while deleting the room');
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred while deleting the room';
+      setError(errorMessage);
     }
   };
 
-  const getHotelName = (hotelId: string) => {
+  const getHotelName = (hotelId?: string) => {
+    if (!hotelId) return 'Unknown Hotel';
     const hotel = hotels.find(h => h.id === hotelId);
     return hotel ? hotel.name : 'Unknown Hotel';
   };
@@ -237,7 +196,7 @@ export default function AdminRoomsPage() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Room Number</label>
                         <input
-                          type="text"
+                          type="number"
                           value={formData.room_number}
                           onChange={(e) => setFormData({ ...formData, room_number: e.target.value })}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -248,15 +207,14 @@ export default function AdminRoomsPage() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Room Type</label>
                         <select
-                          value={formData.type}
-                          onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                          value={formData.type_name}
+                          onChange={(e) => setFormData({ ...formData, type_name: e.target.value as 'Single' | 'Double' | 'Suite' })}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           required
                         >
-                          <option value="single">Single</option>
-                          <option value="double">Double</option>
-                          <option value="suite">Suite</option>
-                          <option value="deluxe">Deluxe</option>
+                          <option value="Single">Single</option>
+                          <option value="Double">Double</option>
+                          <option value="Suite">Suite</option>
                         </select>
                       </div>
 
@@ -274,11 +232,11 @@ export default function AdminRoomsPage() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Capacity</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Max Occupancy</label>
                         <input
                           type="number"
-                          value={formData.capacity}
-                          onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) })}
+                          value={formData.max_occupancy}
+                          onChange={(e) => setFormData({ ...formData, max_occupancy: parseInt(e.target.value) })}
                           className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           min="1"
                           max="10"
@@ -345,13 +303,13 @@ export default function AdminRoomsPage() {
                           <div className="flex items-center space-x-4">
                             <h3 className="text-lg font-semibold text-gray-900">Room {room.room_number}</h3>
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
-                              {room.type}
+                              {room.type_name}
                             </span>
                           </div>
                           <p className="text-gray-600">{getHotelName(room.hotel_id)}</p>
                           <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
                             <span>${room.price_per_night}/night</span>
-                            <span>Capacity: {room.capacity}</span>
+                            <span>Max Occupancy: {room.max_occupancy}</span>
                           </div>
                           {room.description && (
                             <p className="text-sm text-gray-700 mt-2">{room.description}</p>

@@ -168,16 +168,9 @@ function FeaturedHotels() {
                     )}
                   </div>
                   <div className="text-right">
-                    {hotel.price_per_night ? (
-                      <p className="text-lg font-bold text-gray-900">
-                        ${hotel.price_per_night}
-                        <span className="text-sm font-normal text-gray-600">/night</span>
-                      </p>
-                    ) : (
-                      <p className="text-lg font-bold text-gray-900">
-                        <span className="text-sm font-normal text-gray-600">Contact for Price</span>
-                      </p>
-                    )}
+                    <p className="text-lg font-bold text-gray-900">
+                      <span className="text-sm font-normal text-gray-600">View Rooms for Pricing</span>
+                    </p>
                   </div>
                 </div>
               </div>

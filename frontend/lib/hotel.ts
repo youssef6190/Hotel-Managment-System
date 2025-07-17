@@ -27,7 +27,6 @@ export interface Hotel {
   admin_id?: string; // ID of the hotel admin who manages this hotel
   rating?: number; // Hotel rating from 1.0 to 5.0
   review_count?: number; // Number of reviews for this hotel
-  price_per_night?: number; // Base price per night (optional, might vary by room)
 }
 
 export class HotelAPI {

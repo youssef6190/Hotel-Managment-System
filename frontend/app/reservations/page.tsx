@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { authAPI } from '@/lib/auth';
+import { RoomAPI, Room } from '@/lib/room';
 import Header from '@/components/Header';
 
 interface Hotel {
@@ -13,7 +14,6 @@ interface Hotel {
     country: string;
     city: string;
   };
-  price_per_night: number;
   images: string[];
   description: string;
 }
@@ -37,8 +37,11 @@ export default function ReservationsPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [reservationsLoading, setReservationsLoading] = useState(true);
   const [showNewReservationForm, setShowNewReservationForm] = useState(false);
+  const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
+  const [roomsLoading, setRoomsLoading] = useState(false);
   const [formData, setFormData] = useState({
     hotel_id: '',
+    room_id: '',
     start_date: '',
     end_date: '',
     number_of_guests: 1
@@ -114,23 +117,59 @@ export default function ReservationsPage() {
 
   const loadHotels = async () => {
     try {
-      const headers = await authAPI.getAuthHeadersWithRefresh();
+      console.log('Loading hotels for user role:', user?.role);
       
-      // For hotel admins, load only their assigned hotels
-      const endpoint = user?.role === 'hotel_admin' 
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/admin`
-        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/`;
-      
-      const response = await fetch(endpoint, {
-        headers
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setHotels(data);
+      // For hotel admins, load only their assigned hotels (requires auth)
+      if (user?.role === 'hotel_admin') {
+        const headers = await authAPI.getAuthHeadersWithRefresh();
+        console.log('Auth headers for admin:', headers);
+        
+        const endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/admin`;
+        console.log('Fetching from admin endpoint:', endpoint);
+        
+        const response = await fetch(endpoint, {
+          headers
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Hotels loaded:', data);
+          setHotels(data);
+        } else {
+          const errorText = await response.text();
+          console.error('API error response:', errorText);
+          setError('Failed to load hotels. Please try again.');
+        }
+      } else {
+        // For regular users (guests), use public endpoint without auth
+        const endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/`;
+        console.log('Fetching from public endpoint:', endpoint);
+        
+        const response = await fetch(endpoint, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response ok:', response.ok);
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Hotels loaded:', data);
+          setHotels(data);
+        } else {
+          const errorText = await response.text();
+          console.error('API error response:', errorText);
+          setError('Failed to load hotels. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Failed to load hotels:', error);
+      setError('Failed to load hotels. Please check your connection.');
     }
   };
 
@@ -192,40 +231,52 @@ export default function ReservationsPage() {
     }
   };
 
+  const loadRoomsForHotel = async (hotelId: string) => {
+    if (!hotelId) {
+      setAvailableRooms([]);
+      return;
+    }
+
+    try {
+      setRoomsLoading(true);
+      const rooms = await RoomAPI.getRoomsByHotel(hotelId);
+      console.log('Loaded rooms for hotel:', hotelId, rooms);
+      setAvailableRooms(rooms);
+    } catch (error) {
+      console.error('Failed to load rooms:', error);
+      setAvailableRooms([]);
+    } finally {
+      setRoomsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
+    // Validate that a room is selected
+    if (!formData.room_id) {
+      setError('Please select a room');
+      return;
+    }
+
+    // Validate guest capacity
+    const selectedRoom = availableRooms.find(room => room.id === formData.room_id);
+    if (selectedRoom && formData.number_of_guests > selectedRoom.max_occupancy) {
+      setError(`This room can accommodate maximum ${selectedRoom.max_occupancy} guests. Please select a different room or reduce the number of guests.`);
+      return;
+    }
+
     try {
-      // First, get available rooms for the hotel
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const roomsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/rooms/?hotel_id=${formData.hotel_id}`, {
-        headers
-      });
-
-      if (!roomsResponse.ok) {
-        setError('Failed to get available rooms');
-        return;
-      }
-
-      const rooms = await roomsResponse.json();
-      if (rooms.length === 0) {
-        setError('No rooms available for this hotel');
-        return;
-      }
-
-      // Use the first available room
-      const selectedRoom = rooms[0];
       
-      // Calculate total price
+      // Calculate total price using the room's price per night
       const nights = calculateNights();
-      const hotel = getSelectedHotel();
-      const totalPrice = hotel ? hotel.price_per_night * nights : 0;
+      const totalPrice = selectedRoom && selectedRoom.price_per_night ? selectedRoom.price_per_night * nights : 0;
 
       const reservationData = {
         ...formData,
-        room_id: selectedRoom.id,
         price: totalPrice,
         status: 'pending'
       };
@@ -239,7 +290,8 @@ export default function ReservationsPage() {
       if (response.ok) {
         setSuccess('Reservation created successfully!');
         setShowNewReservationForm(false);
-        setFormData({ hotel_id: '', start_date: '', end_date: '', number_of_guests: 1 });
+        setFormData({ hotel_id: '', room_id: '', start_date: '', end_date: '', number_of_guests: 1 });
+        setAvailableRooms([]);
         loadReservations();
       } else {
         const errorData = await response.json();
@@ -252,10 +304,11 @@ export default function ReservationsPage() {
 
   const calculateNights = () => {
     if (formData.start_date && formData.end_date) {
-      const checkIn = new Date(formData.start_date);
-      const checkOut = new Date(formData.end_date);
+      // Create dates without time to avoid timezone issues
+      const checkIn = new Date(formData.start_date + 'T00:00:00');
+      const checkOut = new Date(formData.end_date + 'T00:00:00');
       const diffTime = checkOut.getTime() - checkIn.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       return diffDays > 0 ? diffDays : 0;
     }
     return 0;
@@ -266,9 +319,30 @@ export default function ReservationsPage() {
   };
 
   const calculateTotal = () => {
-    const hotel = getSelectedHotel();
+    // Find the selected room using both string and object comparison
+    const selectedRoom = availableRooms.find(room => 
+      room.id === formData.room_id || 
+      room.id?.toString() === formData.room_id?.toString()
+    );
+    
     const nights = calculateNights();
-    return hotel ? hotel.price_per_night * nights : 0;
+    
+    if (!selectedRoom || nights <= 0) {
+      return 0;
+    }
+    
+    // Convert price to number, handling both string and number formats
+    const pricePerNight = parseFloat(selectedRoom.price_per_night?.toString() || '0');
+    
+    if (!pricePerNight || isNaN(pricePerNight)) {
+      return 0;
+    }
+    
+    return pricePerNight * nights;
+  };
+
+  const getSelectedRoom = () => {
+    return availableRooms.find(room => room.id === formData.room_id);
   };
 
   return (
@@ -297,7 +371,11 @@ export default function ReservationsPage() {
             {/* Only show "New Reservation" button for guests */}
             {user?.role === 'guest' && (
               <button
-                onClick={() => setShowNewReservationForm(true)}
+                onClick={() => {
+                  setError('');
+                  setSuccess('');
+                  setShowNewReservationForm(true);
+                }}
                 className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors duration-200"
               >
                 New Reservation
@@ -322,7 +400,7 @@ export default function ReservationsPage() {
         )}
 
         {/* New Reservation Form Modal - Only for guests */}
-        {showNewReservationForm && user?.role === 'guest' && (
+        {showNewReservationForm && (user?.role === 'guest' || user?.role === 'hotel_admin'||user?.role === 'super_admin') && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
@@ -339,24 +417,75 @@ export default function ReservationsPage() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Error/Success Messages */}
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                      {error}
+                    </div>
+                  )}
+                  {success && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+                      {success}
+                    </div>
+                  )}
+
                   {/* Hotel Selection */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Select Hotel
+                      Select Hotel {hotels.length === 0 && '(Loading...)'}
                     </label>
                     <select
                       value={formData.hotel_id}
-                      onChange={(e) => setFormData({ ...formData, hotel_id: e.target.value })}
+                      onChange={(e) => {
+                        const hotelId = e.target.value;
+                        setFormData({ ...formData, hotel_id: hotelId, room_id: '' });
+                        loadRoomsForHotel(hotelId);
+                      }}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
                       required
                     >
                       <option value="" className="text-gray-500">Choose a hotel...</option>
                       {hotels.map((hotel) => (
                         <option key={hotel.id} value={hotel.id}>
-                          {hotel.name} - {hotel.location.city}, {hotel.location.country} (${hotel.price_per_night}/night)
+                          {hotel.name} - {hotel.location.city}, {hotel.location.country}
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  {/* Room Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Select Room
+                    </label>
+                    {!formData.hotel_id ? (
+                      <div className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-500">
+                        Please select a hotel first
+                      </div>
+                    ) : roomsLoading ? (
+                      <div className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-50 text-gray-600 flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                        Loading available rooms...
+                      </div>
+                    ) : availableRooms.length === 0 ? (
+                      <div className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-red-50 text-red-600">
+                        No rooms available for this hotel
+                      </div>
+                    ) : (
+                      <select
+                        value={formData.room_id}
+                        onChange={(e) => setFormData({ ...formData, room_id: e.target.value })}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white"
+                        required
+                      >
+                        <option value="" className="text-gray-500">Choose a room...</option>
+                        {availableRooms.map((room) => (
+                          <option key={room.id} value={room.id}>
+                            Room {room.room_number} - {room.type_name} (${room.price_per_night}/night, Max {room.max_occupancy} guests)
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
 
                   {/* Date Selection */}
@@ -393,6 +522,11 @@ export default function ReservationsPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Number of Guests
+                      {getSelectedRoom() && (
+                        <span className="text-xs text-gray-500 ml-1">
+                          (Max: {getSelectedRoom()?.max_occupancy})
+                        </span>
+                      )}
                     </label>
                     <input
                       type="number"
@@ -400,14 +534,19 @@ export default function ReservationsPage() {
                       onChange={(e) => setFormData({ ...formData, number_of_guests: parseInt(e.target.value) })}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 bg-white placeholder:text-gray-600"
                       min="1"
-                      max="10"
+                      max={getSelectedRoom()?.max_occupancy || 10}
                       placeholder="Enter number of guests"
                       required
                     />
+                    {getSelectedRoom() && formData.number_of_guests > (getSelectedRoom()?.max_occupancy || 0) && (
+                      <p className="text-sm text-red-600 mt-1">
+                        This room can accommodate maximum {getSelectedRoom()?.max_occupancy} guests
+                      </p>
+                    )}
                   </div>
 
                   {/* Price Summary */}
-                  {formData.hotel_id && formData.start_date && formData.end_date && (
+                  {formData.hotel_id && formData.room_id && formData.start_date && formData.end_date && (
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <h3 className="font-semibold text-gray-900 mb-2">Booking Summary</h3>
                       <div className="space-y-1 text-sm text-gray-600">
@@ -416,12 +555,20 @@ export default function ReservationsPage() {
                           <span>{getSelectedHotel()?.name}</span>
                         </div>
                         <div className="flex justify-between">
+                          <span>Room:</span>
+                          <span>
+                            {getSelectedRoom() && (
+                              `Room ${getSelectedRoom()?.room_number} (${getSelectedRoom()?.type_name})`
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
                           <span>Nights:</span>
                           <span>{calculateNights()}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Price per night:</span>
-                          <span>${getSelectedHotel()?.price_per_night}</span>
+                          <span>${getSelectedRoom()?.price_per_night?.toFixed(2) || '0.00'}</span>
                         </div>
                         <div className="flex justify-between">
                           <span>Guests:</span>
@@ -429,7 +576,7 @@ export default function ReservationsPage() {
                         </div>
                         <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t">
                           <span>Total:</span>
-                          <span>${calculateTotal()}</span>
+                          <span>${calculateTotal().toFixed(2)}</span>
                         </div>
                       </div>
                     </div>

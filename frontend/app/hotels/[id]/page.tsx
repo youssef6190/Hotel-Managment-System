@@ -36,10 +36,8 @@ export default function HotelDetailPage() {
       console.log('Hotel data received:', data);
       setHotel(data);
       
-      // If hotel doesn't have a base price, try to fetch minimum room price
-      if (!data.price_per_night) {
-        await fetchMinRoomPrice(hotelId);
-      }
+      // Fetch minimum room price to show starting price
+      await fetchMinRoomPrice(hotelId);
     } catch (err) {
       console.error('Error fetching hotel:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load hotel';
@@ -553,23 +551,19 @@ export default function HotelDetailPage() {
               <div className="mb-6 p-4 bg-orange-50 rounded-lg">
                 <div className="flex items-baseline">
                   <span className="text-3xl font-bold text-orange-600">
-                    {hotel.price_per_night 
-                      ? `$${hotel.price_per_night}` 
-                      : minRoomPrice 
-                        ? `From $${minRoomPrice}` 
-                        : 'Contact for Price'
+                    {minRoomPrice 
+                      ? `From $${minRoomPrice}` 
+                      : 'Contact for Price'
                     }
                   </span>
-                  {(hotel.price_per_night || minRoomPrice) && (
+                  {minRoomPrice && (
                     <span className="text-gray-600 ml-1">/night</span>
                   )}
                 </div>
                 <p className="text-sm text-gray-600 mt-1">
-                  {hotel.price_per_night 
-                    ? 'Base room price' 
-                    : minRoomPrice 
-                      ? 'Starting price - varies by room type' 
-                      : 'Price varies by room type and availability'
+                  {minRoomPrice 
+                    ? 'Starting price - varies by room type' 
+                    : 'Price varies by room type and availability'
                   }
                 </p>
               </div>
