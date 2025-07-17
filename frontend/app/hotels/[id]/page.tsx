@@ -593,7 +593,7 @@ export default function HotelDetailPage() {
                     <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    Book Now
+                    Book Now (View Rooms)
                   </Link>
                 ) : (
                   <button
@@ -607,15 +607,7 @@ export default function HotelDetailPage() {
                     Book Now
                   </button>
                 )}
-                <Link
-                  href={`/hotels/${hotel.id}/rooms`}
-                  className="w-full border border-orange-600 text-orange-600 py-3 px-4 rounded-lg font-medium hover:bg-orange-50 transition-colors duration-200 flex items-center justify-center"
-                >
-                  <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                  View Rooms
-                </Link>
+                
               </div>
 
               {/* Quick Contact */}
