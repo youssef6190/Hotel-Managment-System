@@ -10,6 +10,7 @@ class Status(Enum):
     PENDING = "pending"
 
 class Reservation(MongoBaseModel):
+    id: Optional[str] = None  # Reservation ID
     hotel_id:  Optional[PydanticObjectId] = None  # ID of the hotel being reserved
     user_id:   Optional[PydanticObjectId] = None # ID of the user making the reservation
     room_id:   Optional[PydanticObjectId] = None # ID of the room being reserved

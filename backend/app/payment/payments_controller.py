@@ -108,3 +108,14 @@ async def get_payments_by_user(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching user payments: {str(e)}")
+
+@router.get("/my-payments", response_model=List[Payment])
+async def get_my_payments(
+    current_user: UserDocument = Depends(get_current_user)
+):
+    """Get all payments for the current authenticated user - Used for guests to see their own payments"""
+    try:
+        payments = await PaymentDocument.find({"user_id": current_user.id}).to_list()
+        return payments
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching your payments: {str(e)}")

@@ -49,11 +49,19 @@ export default function ReservationsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // State to hold hotel and room details for each reservation
+  const [hotelDetails, setHotelDetails] = useState<{[key: string]: Hotel}>({});
+  const [roomDetails, setRoomDetails] = useState<{[key: string]: Room}>({});
+  
   // Load data for authenticated guests - moved before early returns
   useEffect(() => {
     if (isAuthenticated && user?.role !== 'viewer') {
       loadHotels();
-      loadReservations();
+      loadReservations().then(loadedReservations => {
+        if (loadedReservations && user?.role === 'guest') {
+          loadReservationDetails(loadedReservations);
+        }
+      });
     }
   }, [isAuthenticated, user]);
 
@@ -161,6 +169,7 @@ export default function ReservationsPage() {
       const headers = await authAPI.getAuthHeadersWithRefresh();
       
       let endpoint = '';
+      let loadedReservations = [];
       
       // Different endpoints based on user role
       if (user?.role === 'hotel_admin') {
@@ -185,6 +194,7 @@ export default function ReservationsPage() {
             }
           }
           
+          loadedReservations = allReservations;
           setReservations(allReservations);
         }
       } else if (user?.role === 'super_admin') {
@@ -194,6 +204,7 @@ export default function ReservationsPage() {
         
         if (response.ok) {
           const data = await response.json();
+          loadedReservations = data;
           setReservations(data);
         }
       } else {
@@ -203,11 +214,15 @@ export default function ReservationsPage() {
         
         if (response.ok) {
           const data = await response.json();
+          loadedReservations = data;
           setReservations(data);
         }
       }
+      
+      return loadedReservations;
     } catch (error) {
       console.error('Failed to load reservations:', error);
+      return [];
     } finally {
       setReservationsLoading(false);
     }
@@ -229,6 +244,62 @@ export default function ReservationsPage() {
     } finally {
       setRoomsLoading(false);
     }
+  };
+
+  // Function to fetch hotel and room details for each reservation
+  const loadReservationDetails = async (reservationList: Reservation[]) => {
+    // Set up hotel detail fetching
+    const hotelPromises = reservationList.map(async (reservation) => {
+      if (!reservation.hotel_id) return null;
+      
+      try {
+        const hotel = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/${reservation.hotel_id}`)
+          .then(res => res.ok ? res.json() : null);
+        
+        return { id: reservation.hotel_id, data: hotel };
+      } catch (error) {
+        console.error(`Error fetching hotel ${reservation.hotel_id}:`, error);
+        return null;
+      }
+    });
+    
+    // Set up room detail fetching
+    const roomPromises = reservationList.map(async (reservation) => {
+      if (!reservation.room_id) return null;
+      
+      try {
+        const room = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/rooms/${reservation.room_id}`)
+          .then(res => res.ok ? res.json() : null);
+        
+        return { id: reservation.room_id, data: room };
+      } catch (error) {
+        console.error(`Error fetching room ${reservation.room_id}:`, error);
+        return null;
+      }
+    });
+    
+    // Wait for all promises to resolve
+    const hotelResults = await Promise.all(hotelPromises);
+    const roomResults = await Promise.all(roomPromises);
+    
+    // Convert to lookup objects
+    const hotelMap: {[key: string]: Hotel} = {};
+    const roomMap: {[key: string]: Room} = {};
+    
+    hotelResults.forEach(result => {
+      if (result && result.data) {
+        hotelMap[result.id] = result.data;
+      }
+    });
+    
+    roomResults.forEach(result => {
+      if (result && result.data) {
+        roomMap[result.id] = result.data;
+      }
+    });
+    
+    setHotelDetails(hotelMap);
+    setRoomDetails(roomMap);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -639,7 +710,9 @@ export default function ReservationsPage() {
                         <h3 className="font-semibold text-gray-900">
                           {user?.role === 'hotel_admin' || user?.role === 'super_admin' 
                             ? `Reservation #${reservation.id.slice(-8)}` 
-                            : `Hotel ID: ${reservation.hotel_id}`}
+                            : hotelDetails[reservation.hotel_id]
+                              ? `${hotelDetails[reservation.hotel_id].name}`
+                              : `Reservation #${reservation.id.slice(-8)}`}
                         </h3>
                         
                         <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-600">
@@ -658,6 +731,22 @@ export default function ReservationsPage() {
                             </>
                           )}
                           
+                          {/* Show hotel and room details for guests */}
+                          {user?.role === 'guest' && (
+                            <>
+                              {hotelDetails[reservation.hotel_id] && (
+                                <div>
+                                  <span className="font-medium">Location:</span> {hotelDetails[reservation.hotel_id].location.city}, {hotelDetails[reservation.hotel_id].location.country}
+                                </div>
+                              )}
+                              {roomDetails[reservation.room_id] && (
+                                <div>
+                                  <span className="font-medium">Room Type:</span> {roomDetails[reservation.room_id].type_name || 'Standard Room'}
+                                </div>
+                              )}
+                            </>
+                          )}
+                          
                           <div>
                             <span className="font-medium">Check-in:</span> {new Date(reservation.start_date).toLocaleDateString()}
                           </div>
@@ -668,7 +757,7 @@ export default function ReservationsPage() {
                             <span className="font-medium">Guests:</span> {reservation.number_of_guests}
                           </div>
                           <div>
-                            <span className="font-medium">Total:</span> ${reservation.price}
+                            <span className="font-medium">Total:</span> ${reservation.price.toFixed(2)}
                           </div>
                           
                           {reservation.created_at && (
@@ -688,6 +777,20 @@ export default function ReservationsPage() {
                         }`}>
                           {reservation.status}
                         </span>
+                        
+                        {/* Guest actions - only show for guests */}
+                        {user?.role === 'guest' && (
+                          <div className="mt-2">
+                            {reservation.status === 'pending' && (
+                              <Link 
+                                href={`/payments?reservation_id=${reservation.id}`}
+                                className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors inline-block"
+                              >
+                                Make Payment
+                              </Link>
+                            )}
+                          </div>
+                        )}
                         
                         {/* Admin actions - only show for hotel admins and super admins */}
                         {(user?.role === 'hotel_admin' || user?.role === 'super_admin') && (

@@ -11,8 +11,48 @@ from auth.permissions import (
 )
 from user.User import UserDocument
 from auth.auth import get_current_user
+from pydantic import BaseModel
+
+class ReservationResponse(BaseModel):
+    """Response model for reservation data with string IDs"""
+    id: str
+    hotel_id: str
+    user_id: str
+    room_id: str
+    start_date: str
+    end_date: str
+    status: Status
+    number_of_guests: int
+    price: float
+
+    @classmethod
+    def from_document(cls, doc: ReservationDocument):
+        """Convert ReservationDocument to ReservationResponse"""
+        return cls(
+            id=str(doc.id),
+            hotel_id=str(doc.hotel_id) if doc.hotel_id else "",
+            user_id=str(doc.user_id) if doc.user_id else "",
+            room_id=str(doc.room_id) if doc.room_id else "",
+            start_date=doc.start_date,
+            end_date=doc.end_date,
+            status=doc.status,
+            number_of_guests=doc.number_of_guests,
+            price=doc.price
+        )
 
 router = APIRouter()
+
+@router.get("/my-reservations", response_model=List[ReservationResponse])
+async def get_my_reservations(current_user: UserDocument = Depends(get_current_user)):
+    """Get all reservations for the currently logged-in user"""
+    try:
+        # Find reservations by user_id
+        user_reservations = await ReservationDocument.find({"user_id": current_user.id}).to_list()
+        
+        # Convert to response models with proper string serialization
+        return [ReservationResponse.from_document(res) for res in user_reservations]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching your reservations: {str(e)}")
 
 @router.post("/", response_model=dict, status_code=status.HTTP_201_CREATED)
 async def create_reservation(
@@ -60,18 +100,18 @@ async def create_reservation(
         print(f"Reservation data: {reservation_data}")
         raise HTTPException(status_code=500, detail=f"Error creating reservation: {str(e)}")
 
-@router.get("/", response_model=List[Reservation])
+@router.get("/", response_model=List[ReservationResponse])
 async def get_all_reservations(
     current_user: UserDocument = Depends(require_reservation_permission(CRUDOperation.READ))
 ):
     """Get all reservations - Requires SUPER_ADMIN or HOTEL_ADMIN role"""
     try:
         reservations = await ReservationDocument.find_all().to_list()
-        return reservations
+        return [ReservationResponse.from_document(res) for res in reservations]
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching reservations: {str(e)}")
 
-@router.get("/{reservation_id}", response_model=Reservation)
+@router.get("/{reservation_id}", response_model=ReservationResponse)
 async def get_reservation(
     reservation_id: str,
     current_user: UserDocument = Depends(get_current_user)
@@ -92,7 +132,7 @@ async def get_reservation(
         if not is_own_reservation and not has_admin_permission:
             raise HTTPException(status_code=403, detail="Not authorized to view this reservation")
         
-        return reservation
+        return ReservationResponse.from_document(reservation)
     except HTTPException:
         raise
     except Exception as e:
@@ -165,22 +205,30 @@ async def delete_reservation(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting reservation: {str(e)}")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error deleting reservation: {str(e)}")
 
-@router.get("/user/{user_id}", response_model=List[Reservation])
+@router.get("/user/{user_id}", response_model=List[ReservationResponse])
 async def get_user_reservations(user_id: str):
     try:
+        if not ObjectId.is_valid(user_id):
+            raise HTTPException(status_code=400, detail="Invalid user ID format")
+            
         reservations = await ReservationDocument.find({"user_id": ObjectId(user_id)}).to_list()
-        return reservations
+        return [ReservationResponse.from_document(res) for res in reservations]
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching reservations for user: {str(e)}")
 
-@router.get("/hotel/{hotel_id}", response_model=List[Reservation])
+@router.get("/hotel/{hotel_id}", response_model=List[ReservationResponse])
 async def get_hotel_reservations(hotel_id: str):
     try:
+        if not ObjectId.is_valid(hotel_id):
+            raise HTTPException(status_code=400, detail="Invalid hotel ID format")
+            
         reservations = await ReservationDocument.find({"hotel_id": ObjectId(hotel_id)}).to_list()
-        return reservations
+        return [ReservationResponse.from_document(res) for res in reservations]
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching reservations for hotel: {str(e)}")
 
