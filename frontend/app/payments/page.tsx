@@ -365,7 +365,15 @@ export default function PaymentsPage() {
                   </label>
                   <select
                     value={formData.reservation_id}
-                    onChange={(e) => setFormData({...formData, reservation_id: e.target.value})}
+                    onChange={(e) => {
+                      const selectedReservationId = e.target.value;
+                      const selectedReservation = reservations.find(r => r.id === selectedReservationId);
+                      setFormData({
+                        ...formData, 
+                        reservation_id: selectedReservationId,
+                        amount: selectedReservation ? selectedReservation.price : 0
+                      });
+                    }}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900"
                     required
                   >
@@ -380,18 +388,18 @@ export default function PaymentsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Amount ($)
+                    Amount ($) - Auto-calculated
                   </label>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: parseFloat(e.target.value) || 0})}
-                    placeholder="Enter payment amount"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900 placeholder:text-gray-600"
+                    type="text"
+                    value={formData.amount > 0 ? formatCurrency(formData.amount) : 'Select a reservation first'}
+                    readOnly
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-700 cursor-not-allowed"
                     required
                   />
+                  {formData.amount === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">Amount will be set based on selected reservation</p>
+                  )}
                 </div>
 
                 <div>
