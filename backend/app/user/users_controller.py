@@ -114,7 +114,7 @@ async def update_user(
         
         # Check if user can access this data (own data or SUPER_ADMIN only)
         is_own_data = str(current_user.id) == user_id
-        is_super_admin = current_user.role == "SUPER_ADMIN"
+        is_super_admin = current_user.role == Role.SUPER_ADMIN
         
         if not is_own_data and not is_super_admin:
             raise HTTPException(status_code=403, detail="Not authorized to update this user")

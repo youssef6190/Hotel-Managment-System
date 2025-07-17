@@ -52,7 +52,7 @@ async def get_hotels_for_admin(
     """Get hotels for the current admin - Returns hotels where admin_id matches current user ID"""
     try:
         # For SUPER_ADMIN, return all hotels
-        if current_user.role == "SUPER_ADMIN":
+        if current_user.role == Role.SUPER_ADMIN:
             hotels = await HotelDocument.find_all().to_list()
         else:
             # For HOTEL_ADMIN, return only hotels they manage

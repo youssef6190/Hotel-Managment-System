@@ -7,7 +7,7 @@ from auth.permissions import (
     CRUDOperation,
     can_access_own_data
 )
-from user.User import UserDocument
+from user.User import UserDocument, Role
 from auth.auth import get_current_user
 from pydantic import BaseModel
 
@@ -75,7 +75,7 @@ async def get_my_hotel_payments(
 ):
     """Get payments for hotels managed by the current hotel admin"""
     try:
-        if current_user.role != 'hotel_admin':
+        if current_user.role != Role.HOTEL_ADMIN:
             raise HTTPException(status_code=403, detail="Access denied - Hotel admin role required")
             
         from hotel.hotel import HotelDocument
@@ -133,10 +133,10 @@ async def get_all_payments(
 ):
     """Get all payments - Super admins see all, hotel admins see payments for their hotels only"""
     try:
-        if current_user.role == 'super_admin':
+        if current_user.role == Role.SUPER_ADMIN:
             # Super admins see all payments
             payments = await PaymentDocument.find_all().to_list()
-        elif current_user.role == 'hotel_admin':
+        elif current_user.role == Role.HOTEL_ADMIN:
             # Hotel admins see payments for reservations in their hotels only
             from hotel.hotel import HotelDocument
             from reservation.reservation import ReservationDocument
