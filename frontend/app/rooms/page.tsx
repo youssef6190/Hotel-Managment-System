@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import { Hotel, HotelAPI } from '@/lib/hotel';
 import { Room, RoomAPI } from '@/lib/room';
 import { useAuth } from '@/contexts/AuthContext';
+import { authAPI } from '@/lib/auth';
 import { 
   Users, 
   Bed, 
@@ -490,14 +491,28 @@ export default function RoomsPage() {
                       >
                         View Hotel
                       </Link>
-                      <button 
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                        onClick={() => {
+                      {user ? (
+                        <button 
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                          onClick={() => {
                           router.push(`/reservations?hotel_id=${room.hotel_id}&room_id=${room.id}`);
                         }}
                       >
                         Book Now
-                      </button>
+                        </button>
+                      ) : (
+                        <Link
+                          href="/login"
+                          className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                        >
+                          Login to Book
+                        </Link>
+                      )}
+                      {user?.role === 'viewer' && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          Contact admin to upgrade your account for booking
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
