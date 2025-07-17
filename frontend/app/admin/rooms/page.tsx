@@ -181,7 +181,7 @@ export default function AdminRoomsPage() {
                         <select
                           value={formData.hotel_id}
                           onChange={(e) => setFormData({ ...formData, hotel_id: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-900 text-gray-900"
                           required
                         >
                           <option value="">Select a hotel...</option>
@@ -199,7 +199,7 @@ export default function AdminRoomsPage() {
                           type="number"
                           value={formData.room_number}
                           onChange={(e) => setFormData({ ...formData, room_number: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-900 text-gray-900"
                           required
                         />
                       </div>
@@ -209,7 +209,7 @@ export default function AdminRoomsPage() {
                         <select
                           value={formData.type_name}
                           onChange={(e) => setFormData({ ...formData, type_name: e.target.value as 'Single' | 'Double' | 'Suite' })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-900 text-gray-900"
                           required
                         >
                           <option value="Single">Single</option>
@@ -224,9 +224,9 @@ export default function AdminRoomsPage() {
                           type="number"
                           value={formData.price_per_night}
                           onChange={(e) => setFormData({ ...formData, price_per_night: parseFloat(e.target.value) })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-900 text-gray-900"
                           min="0"
-                          step="0.01"
+                          step="1"
                           required
                         />
                       </div>
@@ -237,7 +237,7 @@ export default function AdminRoomsPage() {
                           type="number"
                           value={formData.max_occupancy}
                           onChange={(e) => setFormData({ ...formData, max_occupancy: parseInt(e.target.value) })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-900 text-gray-900"
                           min="1"
                           max="10"
                           required
@@ -249,7 +249,7 @@ export default function AdminRoomsPage() {
                         <textarea
                           value={formData.description}
                           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-900 text-gray-900"
                           rows={4}
                         />
                       </div>

@@ -254,9 +254,9 @@ export default function HotelRoomsPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-blue-700"
               >
-                <Filter className="w-4 h-4 mr-2" />
+                <Filter className="w-4 h-4 mr-2 text-blue-950" />
                 Filters
               </button>
               
@@ -268,7 +268,7 @@ export default function HotelRoomsPage() {
                   id="sort"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-900 text-gray-900"
                 >
                   <option value="room_number">Room Number</option>
                   <option value="price_asc">Price: Low to High</option>
@@ -288,13 +288,13 @@ export default function HotelRoomsPage() {
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2 ">
                     Room Type
                   </label>
                   <select
                     value={filters.type}
                     onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   >
                     <option value="">All Types</option>
                     <option value="Single">Single</option>
@@ -304,7 +304,7 @@ export default function HotelRoomsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Min Price
                   </label>
                   <input
@@ -312,7 +312,7 @@ export default function HotelRoomsPage() {
                     value={filters.minPrice || ''}
                     onChange={(e) => setFilters({ ...filters, minPrice: e.target.value ? Number(e.target.value) : null })}
                     placeholder="$0"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-900 text-gray-900"
                   />
                 </div>
 
@@ -325,7 +325,7 @@ export default function HotelRoomsPage() {
                     value={filters.maxPrice || ''}
                     onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value ? Number(e.target.value) : null })}
                     placeholder="$1000"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-900 text-gray-900"
                   />
                 </div>
 
@@ -340,7 +340,7 @@ export default function HotelRoomsPage() {
                     placeholder="1"
                     min="1"
                     max="10"
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-900 text-gray-900"
                   />
                 </div>
               </div>

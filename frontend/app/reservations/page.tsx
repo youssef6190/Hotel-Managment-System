@@ -49,6 +49,9 @@ export default function ReservationsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [updatingReservation, setUpdatingReservation] = useState<string | null>(null);
+  
+  // Track reservations that have payments created
+  const [reservationsWithPayments, setReservationsWithPayments] = useState<Set<string>>(new Set());
 
   // State to hold hotel and room details for each reservation
   const [hotelDetails, setHotelDetails] = useState<{[key: string]: Hotel}>({});
@@ -63,6 +66,11 @@ export default function ReservationsPage() {
           loadReservationDetails(loadedReservations);
         }
       });
+      
+      // Load existing payments for guests to track which reservations already have payments
+      if (user?.role === 'guest') {
+        loadExistingPayments();
+      }
     }
   }, [isAuthenticated, user]);
 
@@ -452,6 +460,29 @@ export default function ReservationsPage() {
     }
   };
 
+  // Load existing payments to check which reservations already have payments
+  const loadExistingPayments = async () => {
+    try {
+      const headers = await authAPI.getAuthHeadersWithRefresh();
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/my-payments`, {
+        headers
+      });
+      
+      if (response.ok) {
+        const payments = await response.json();
+        // Extract reservation IDs that already have payments
+        const reservationIds: string[] = payments
+          .map((payment: {reservation_id: string}) => payment.reservation_id)
+          .filter((id: string) => id && id.length > 0);
+        
+        setReservationsWithPayments(new Set(reservationIds));
+      }
+    } catch (error) {
+      console.error('Error loading existing payments:', error);
+    }
+  };
+
   // Automatic payment creation for guests
   const [creatingPayment, setCreatingPayment] = useState<string | null>(null);
   
@@ -479,8 +510,19 @@ export default function ReservationsPage() {
 
       if (response.ok) {
         setSuccess(`Payment of $${reservation.price.toFixed(2)} created successfully for your reservation!`);
-        // Optionally reload reservations to update UI
-        // loadReservations();
+        
+        // Add this reservation to the set of reservations with payments
+        setReservationsWithPayments(prev => new Set(prev).add(reservation.id));
+        
+        // Scroll to the top of the page to show success message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccess(''), 5000);
+        
+        // Optional: Reload reservations to get updated data from server
+        // This ensures consistency with the backend
+        loadReservations();
       } else {
         const errorData = await response.json();
         setError(errorData.detail || 'Failed to create payment');
@@ -858,7 +900,7 @@ export default function ReservationsPage() {
                         {/* Guest actions - only show for guests */}
                         {user?.role === 'guest' && (
                           <div className="mt-2">
-                            {reservation.status === 'pending' && (
+                            {reservation.status === 'pending' && !reservationsWithPayments.has(reservation.id) && (
                               <button 
                                 onClick={() => {
                                   setError(''); // Clear any previous errors
@@ -880,6 +922,11 @@ export default function ReservationsPage() {
                                   'Make Payment'
                                 )}
                               </button>
+                            )}
+                            {reservationsWithPayments.has(reservation.id) && (
+                              <span className="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded">
+                                Payment Created
+                              </span>
                             )}
                           </div>
                         )}

@@ -587,7 +587,7 @@ export default function HotelDetailPage() {
                 {/* Book Now button - enabled only for GUEST, HOTEL_ADMIN and SUPER_ADMIN */}
                 {user && (user.role === 'guest' || user.role === 'hotel_admin' || user.role === 'super_admin') ? (
                   <Link
-                    href={`/hotels/${hotel.id}/book`}
+                    href={`/hotels/${hotel.id}/rooms`}
                     className="w-full bg-orange-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors duration-200 flex items-center justify-center"
                   >
                     <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
