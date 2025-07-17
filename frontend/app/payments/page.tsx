@@ -200,6 +200,8 @@ export default function PaymentsPage() {
       
       const paymentData = {
         ...formData,
+        // For guests, always set status to 'pending', for admins use selected status
+        payment_status: user?.role === 'guest' ? 'pending' : formData.payment_status,
         transaction_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
       };
 
@@ -329,9 +331,20 @@ export default function PaymentsPage() {
                 </p>
               </div>
               
-              {(user?.role === 'guest' || user?.role === 'super_admin') && (
+              {(user?.role === 'guest' || user?.role === 'hotel_admin' || user?.role === 'super_admin') && (
                 <button
-                  onClick={() => setShowNewPaymentForm(true)}
+                  onClick={() => {
+                    setError('');
+                    setSuccess('');
+                    // Reset form data and ensure proper initial state based on user role
+                    setFormData({
+                      reservation_id: '',
+                      amount: 0,
+                      payment_method: 'credit_card',
+                      payment_status: user?.role === 'guest' ? 'pending' : 'pending'
+                    });
+                    setShowNewPaymentForm(true);
+                  }}
                   className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 >
                   + New Payment
@@ -358,7 +371,7 @@ export default function PaymentsPage() {
             <div className="border-b border-gray-200 bg-gray-50 p-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Payment</h3>
               
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <form onSubmit={handleSubmit} className={`grid grid-cols-1 md:grid-cols-2 ${user?.role === 'guest' ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-4`}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Reservation
@@ -420,23 +433,42 @@ export default function PaymentsPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={formData.payment_status}
-                    onChange={(e) => setFormData({...formData, payment_status: e.target.value as 'confirmed' | 'cancelled' | 'pending'})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900"
-                    required
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="confirmed">Confirmed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
+                {/* Status field - Only visible for hotel_admin and super_admin */}
+                {(user?.role === 'hotel_admin' || user?.role === 'super_admin') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={formData.payment_status}
+                      onChange={(e) => setFormData({...formData, payment_status: e.target.value as 'confirmed' | 'cancelled' | 'pending'})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 focus:border-green-500 text-gray-900"
+                      required
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                )}
 
-                <div className="md:col-span-2 lg:col-span-4 flex gap-3">
+                {/* For guests, show a read-only status indicator */}
+                {user?.role === 'guest' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <input
+                      type="text"
+                      value="Pending"
+                      readOnly
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 bg-gray-100 text-gray-700 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Guest payments are automatically set to pending</p>
+                  </div>
+                )}
+
+                <div className={`md:col-span-2 ${user?.role === 'guest' ? 'lg:col-span-3' : 'lg:col-span-4'} flex gap-3`}>
                   <button
                     type="submit"
                     className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
