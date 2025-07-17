@@ -16,7 +16,8 @@ app = FastAPI(
     title="Hotel Management System API",
     description="API for Hotel Management System",
     version="1.0.0",
-    swagger_ui_parameters={"persistAuthorization": True}
+    swagger_ui_parameters={"persistAuthorization": True},
+    debug=True
 )
 
 # Configure CORS

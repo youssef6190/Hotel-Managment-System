@@ -8,7 +8,7 @@ from auth.permissions import (
     CRUDOperation,
     can_access_own_data
 )
-from user.User import UserDocument
+from user.User import Role, UserDocument
 
 router = APIRouter()
 
@@ -19,6 +19,7 @@ async def create_hotel(
 ):
     """Create a new hotel - Requires SUPER_ADMIN or HOTEL_ADMIN role"""
     try:
+        hotel_data.admin_id = current_user.id if current_user.role == Role.HOTEL_ADMIN else None
         hotel_doc = HotelDocument(**hotel_data.model_dump())
         await hotel_doc.insert()
         return {
