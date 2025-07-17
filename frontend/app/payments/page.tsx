@@ -43,6 +43,7 @@ export default function PaymentsPage() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [updatingPayment, setUpdatingPayment] = useState<string | null>(null);
 
   // Load data for authenticated users - moved before early returns
   useEffect(() => {
@@ -160,12 +161,15 @@ export default function PaymentsPage() {
       let endpoint = '';
       
       // Different endpoints based on user role
-      if (user?.role === 'super_admin' || user?.role === 'hotel_admin') {
-        // Admins see all payments
+      if (user?.role === 'super_admin') {
+        // Super admins see all payments
         endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/`;
+      } else if (user?.role === 'hotel_admin') {
+        // Hotel admins see payments for their managed hotels
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/my-hotel-payments`;
       } else {
         // Regular guests see only their own payments
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/user/${user?.id}`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/my-payments`;
       }
       
       const response = await fetch(endpoint, { headers });
@@ -174,10 +178,13 @@ export default function PaymentsPage() {
         const data = await response.json();
         setPayments(data);
       } else {
-        console.error('Failed to load payments');
+        const errorData = await response.json().catch(() => null);
+        console.error('Failed to load payments. Status:', response.status, 'Error:', errorData);
+        setError(`Failed to load payments: ${errorData?.detail || response.statusText}`);
       }
     } catch (error) {
       console.error('Failed to load payments:', error);
+      setError('Network error while loading payments');
     } finally {
       setPaymentsLoading(false);
     }
@@ -244,6 +251,42 @@ export default function PaymentsPage() {
     } catch (error) {
       setError('Network error occurred');
       console.error('Error deleting payment:', error);
+    }
+  };
+
+  const updatePaymentStatus = async (paymentId: string, newStatus: 'confirmed' | 'cancelled') => {
+    try {
+      setUpdatingPayment(paymentId);
+      setError('');
+      setSuccess('');
+      
+      const headers = await authAPI.getAuthHeadersWithRefresh();
+      
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/${paymentId}`,
+        {
+          method: 'PATCH',
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ payment_status: newStatus })
+        }
+      );
+
+      if (response.ok) {
+        setSuccess(`Payment ${newStatus} successfully!`);
+        // Reload payments to reflect the updated status
+        loadPayments();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || `Failed to ${newStatus === 'confirmed' ? 'confirm' : 'cancel'} payment`);
+      }
+    } catch (error) {
+      console.error(`Error updating payment status:`, error);
+      setError(`An error occurred while updating the payment status`);
+    } finally {
+      setUpdatingPayment(null);
     }
   };
 
@@ -476,12 +519,51 @@ export default function PaymentsPage() {
                         </td>
                         {(user?.role === 'super_admin' || user?.role === 'hotel_admin') && (
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              onClick={() => handleDelete(payment.id)}
-                              className="text-red-600 hover:text-red-900 ml-4"
-                            >
-                              Delete
-                            </button>
+                            <div className="flex space-x-2">
+                              {/* Confirm button - only show for pending payments */}
+                              {payment.payment_status === 'pending' && (
+                                <button
+                                  onClick={() => updatePaymentStatus(payment.id, 'confirmed')}
+                                  disabled={updatingPayment === payment.id}
+                                  className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                >
+                                  {updatingPayment === payment.id ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-white mr-1"></div>
+                                      Confirming...
+                                    </>
+                                  ) : (
+                                    'Confirm'
+                                  )}
+                                </button>
+                              )}
+                              
+                              {/* Cancel button - only show for non-cancelled payments */}
+                              {payment.payment_status !== 'cancelled' && (
+                                <button
+                                  onClick={() => updatePaymentStatus(payment.id, 'cancelled')}
+                                  disabled={updatingPayment === payment.id}
+                                  className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                                >
+                                  {updatingPayment === payment.id ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-white mr-1"></div>
+                                      Cancelling...
+                                    </>
+                                  ) : (
+                                    'Cancel'
+                                  )}
+                                </button>
+                              )}
+                              
+                              {/* Delete button */}
+                              <button
+                                onClick={() => handleDelete(payment.id)}
+                                className="text-red-600 hover:text-red-900"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         )}
                       </tr>

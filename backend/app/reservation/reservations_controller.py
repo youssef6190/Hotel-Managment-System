@@ -239,8 +239,30 @@ async def update_reservation_status(reservation_id: str, status: Status):
         if not reservation:
             raise HTTPException(status_code=404, detail="Reservation not found")
         
+        # Store the previous status to check if we're confirming the reservation
+        previous_status = reservation.status
         reservation.status = status
         await reservation.save()
+        
+        # If the reservation is being confirmed and wasn't already confirmed, create a payment
+        if status == Status.CONFIRMED and previous_status != Status.CONFIRMED:
+            from payment.payment import PaymentDocument, Status as PaymentStatus
+            from datetime import datetime
+            
+            # Check if a payment already exists for this reservation
+            existing_payment = await PaymentDocument.find_one({"reservation_id": reservation.id})
+            
+            if not existing_payment:
+                # Create a new payment for the confirmed reservation
+                payment = PaymentDocument(
+                    reservation_id=reservation.id,
+                    user_id=reservation.user_id,
+                    amount=reservation.price,
+                    payment_method="system_generated",  # Default method for auto-generated payments
+                    payment_status=PaymentStatus.PENDING,  # Start as pending, can be updated later
+                    transaction_date=datetime.now().strftime("%Y-%m-%d")
+                )
+                await payment.insert()
         
         return {"message": f"Reservation status updated to {status.value}"}
     except Exception as e:
