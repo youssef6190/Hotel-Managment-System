@@ -48,6 +48,7 @@ export default function ReservationsPage() {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [updatingReservation, setUpdatingReservation] = useState<string | null>(null);
 
   // State to hold hotel and room details for each reservation
   const [hotelDetails, setHotelDetails] = useState<{[key: string]: Hotel}>({});
@@ -414,6 +415,41 @@ export default function ReservationsPage() {
 
   const getSelectedRoom = () => {
     return availableRooms.find(room => room.id === formData.room_id);
+  };
+
+  const updateReservationStatus = async (reservationId: string, newStatus: 'confirmed' | 'cancelled') => {
+    try {
+      setUpdatingReservation(reservationId);
+      setError('');
+      setSuccess('');
+      
+      const headers = await authAPI.getAuthHeadersWithRefresh();
+      
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/reservations/${reservationId}/status?status=${newStatus}`,
+        {
+          method: 'PATCH',
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.ok) {
+        setSuccess(`Reservation ${newStatus} successfully!`);
+        // Reload reservations to reflect the updated status
+        loadReservations();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || `Failed to ${newStatus === 'confirmed' ? 'confirm' : 'cancel'} reservation`);
+      }
+    } catch (error) {
+      console.error(`Error updating reservation status:`, error);
+      setError(`An error occurred while updating the reservation status`);
+    } finally {
+      setUpdatingReservation(null);
+    }
   };
 
   return (
@@ -796,13 +832,37 @@ export default function ReservationsPage() {
                         {(user?.role === 'hotel_admin' || user?.role === 'super_admin') && (
                           <div className="flex space-x-2">
                             {reservation.status === 'pending' && (
-                              <button className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors">
-                                Confirm
+                              <button 
+                                onClick={() => updateReservationStatus(reservation.id, 'confirmed')}
+                                disabled={updatingReservation === reservation.id}
+                                className="text-xs bg-green-600 text-white px-2 py-1 rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                              >
+                                {updatingReservation === reservation.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b border-white mr-1"></div>
+                                    Confirming...
+                                  </>
+                                ) : (
+                                  'Confirm'
+                                )}
                               </button>
                             )}
-                            <button className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors">
-                              Cancel
-                            </button>
+                            {reservation.status !== 'cancelled' && (
+                              <button 
+                                onClick={() => updateReservationStatus(reservation.id, 'cancelled')}
+                                disabled={updatingReservation === reservation.id}
+                                className="text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                              >
+                                {updatingReservation === reservation.id ? (
+                                  <>
+                                    <div className="animate-spin rounded-full h-3 w-3 border-b border-white mr-1"></div>
+                                    Cancelling...
+                                  </>
+                                ) : (
+                                  'Cancel'
+                                )}
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
