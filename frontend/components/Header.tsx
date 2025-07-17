@@ -69,12 +69,10 @@ export default function Header() {
             <Link href="/hotels" className="text-gray-600 hover:text-gray-900">
               Hotels
             </Link>
-            {/* Show reservations link for all users except super_admin */}
-            {(!isAuthenticated || user?.role !== 'super_admin') && (
-              <Link href="/reservations" className="text-gray-600 hover:text-gray-900">
-                Reservations
-              </Link>
-            )}
+            {/* Show reservations link for all users */}
+            <Link href="/reservations" className="text-gray-600 hover:text-gray-900">
+              Reservations
+            </Link>
             {/* Show payments link for authenticated users */}
             {isAuthenticated && user?.role !== 'viewer' && (
               <Link href="/payments" className="text-gray-600 hover:text-gray-900">
