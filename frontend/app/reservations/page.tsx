@@ -452,6 +452,47 @@ export default function ReservationsPage() {
     }
   };
 
+  // Automatic payment creation for guests
+  const [creatingPayment, setCreatingPayment] = useState<string | null>(null);
+  
+  const createAutomaticPayment = async (reservation: Reservation) => {
+    try {
+      setCreatingPayment(reservation.id);
+      setError('');
+      setSuccess('');
+
+      const headers = await authAPI.getAuthHeadersWithRefresh();
+      
+      const paymentData = {
+        reservation_id: reservation.id,
+        amount: reservation.price,
+        payment_method: 'credit_card',
+        payment_status: 'pending', // Guests always create pending payments
+        transaction_date: new Date().toISOString().split('T')[0]
+      };
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(paymentData)
+      });
+
+      if (response.ok) {
+        setSuccess(`Payment of $${reservation.price.toFixed(2)} created successfully for your reservation!`);
+        // Optionally reload reservations to update UI
+        // loadReservations();
+      } else {
+        const errorData = await response.json();
+        setError(errorData.detail || 'Failed to create payment');
+      }
+    } catch (error) {
+      setError('Network error occurred while creating payment');
+      console.error('Error creating automatic payment:', error);
+    } finally {
+      setCreatingPayment(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -818,12 +859,27 @@ export default function ReservationsPage() {
                         {user?.role === 'guest' && (
                           <div className="mt-2">
                             {reservation.status === 'pending' && (
-                              <Link 
-                                href={`/payments?reservation_id=${reservation.id}`}
-                                className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors inline-block"
+                              <button 
+                                onClick={() => {
+                                  setError(''); // Clear any previous errors
+                                  setSuccess(''); // Clear any previous success messages
+                                  createAutomaticPayment(reservation);
+                                }}
+                                disabled={creatingPayment === reservation.id}
+                                className="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                               >
-                                Make Payment
-                              </Link>
+                                {creatingPayment === reservation.id ? (
+                                  <>
+                                    <svg className="animate-spin -ml-1 mr-1 h-3 w-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Creating...
+                                  </>
+                                ) : (
+                                  'Make Payment'
+                                )}
+                              </button>
                             )}
                           </div>
                         )}
