@@ -21,6 +21,12 @@ async def create_reservation(
 ):
     """Create a new reservation - Any authenticated user can create their own reservation"""
     try:
+        # Validate required fields
+        if not reservation_data.hotel_id:
+            raise HTTPException(status_code=400, detail="Hotel ID is required")
+        if not reservation_data.room_id:
+            raise HTTPException(status_code=400, detail="Room ID is required")
+        
         # Check if the room is available for the selected dates
         start_date = reservation_data.start_date
         end_date = reservation_data.end_date
@@ -46,9 +52,12 @@ async def create_reservation(
             "id": str(reservation.id),
             "created_by": current_user.full_name
         }
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=f"Invalid date format. Use YYYY-MM-DD: {str(ve)}")
     except Exception as e:
+        # Log the error for debugging
+        print(f"Error creating reservation: {str(e)}")
+        print(f"Reservation data: {reservation_data}")
         raise HTTPException(status_code=500, detail=f"Error creating reservation: {str(e)}")
 
 @router.get("/", response_model=List[Reservation])

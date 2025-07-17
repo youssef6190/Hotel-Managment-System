@@ -117,36 +117,25 @@ export default function ReservationsPage() {
 
   const loadHotels = async () => {
     try {
-      console.log('Loading hotels for user role:', user?.role);
-      
       // For hotel admins, load only their assigned hotels (requires auth)
       if (user?.role === 'hotel_admin') {
         const headers = await authAPI.getAuthHeadersWithRefresh();
-        console.log('Auth headers for admin:', headers);
         
         const endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/admin`;
-        console.log('Fetching from admin endpoint:', endpoint);
         
         const response = await fetch(endpoint, {
           headers
         });
         
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
-        
         if (response.ok) {
           const data = await response.json();
-          console.log('Hotels loaded:', data);
           setHotels(data);
         } else {
-          const errorText = await response.text();
-          console.error('API error response:', errorText);
           setError('Failed to load hotels. Please try again.');
         }
       } else {
         // For regular users (guests), use public endpoint without auth
         const endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/`;
-        console.log('Fetching from public endpoint:', endpoint);
         
         const response = await fetch(endpoint, {
           headers: {
@@ -154,21 +143,14 @@ export default function ReservationsPage() {
           }
         });
         
-        console.log('Response status:', response.status);
-        console.log('Response ok:', response.ok);
-        
         if (response.ok) {
           const data = await response.json();
-          console.log('Hotels loaded:', data);
           setHotels(data);
         } else {
-          const errorText = await response.text();
-          console.error('API error response:', errorText);
           setError('Failed to load hotels. Please try again.');
         }
       }
     } catch (error) {
-      console.error('Failed to load hotels:', error);
       setError('Failed to load hotels. Please check your connection.');
     }
   };
@@ -240,7 +222,6 @@ export default function ReservationsPage() {
     try {
       setRoomsLoading(true);
       const rooms = await RoomAPI.getRoomsByHotel(hotelId);
-      console.log('Loaded rooms for hotel:', hotelId, rooms);
       setAvailableRooms(rooms);
     } catch (error) {
       console.error('Failed to load rooms:', error);
@@ -261,10 +242,22 @@ export default function ReservationsPage() {
       return;
     }
 
+    // Validate that required fields are not empty
+    if (!formData.hotel_id || !formData.room_id) {
+      setError('Please select both a hotel and a room');
+      return;
+    }
+
     // Validate guest capacity
     const selectedRoom = availableRooms.find(room => room.id === formData.room_id);
     if (selectedRoom && formData.number_of_guests > selectedRoom.max_occupancy) {
       setError(`This room can accommodate maximum ${selectedRoom.max_occupancy} guests. Please select a different room or reduce the number of guests.`);
+      return;
+    }
+
+    // Validate that required fields are not empty
+    if (!formData.hotel_id || !formData.room_id) {
+      setError('Please select both a hotel and a room');
       return;
     }
 
@@ -275,8 +268,13 @@ export default function ReservationsPage() {
       const nights = calculateNights();
       const totalPrice = selectedRoom && selectedRoom.price_per_night ? selectedRoom.price_per_night * nights : 0;
 
+      // Create reservation data with valid values only
       const reservationData = {
-        ...formData,
+        hotel_id: formData.hotel_id,
+        room_id: formData.room_id,
+        start_date: formData.start_date,
+        end_date: formData.end_date,
+        number_of_guests: formData.number_of_guests,
         price: totalPrice,
         status: 'pending'
       };
@@ -295,9 +293,11 @@ export default function ReservationsPage() {
         loadReservations();
       } else {
         const errorData = await response.json();
+        console.error('Reservation creation failed:', errorData);
         setError(errorData.detail || 'Failed to create reservation');
       }
     } catch (error) {
+      console.error('Error creating reservation:', error);
       setError('An error occurred while creating the reservation');
     }
   };
@@ -401,7 +401,7 @@ export default function ReservationsPage() {
 
         {/* New Reservation Form Modal - Only for guests */}
         {showNewReservationForm && (user?.role === 'guest' || user?.role === 'hotel_admin'||user?.role === 'super_admin') && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
