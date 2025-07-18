@@ -12,7 +12,7 @@ export const tokenUtils = {
   /**
    * Set the authentication token in local storage
    */
-  setTokens(accessToken: string, tokenType: string = 'bearer', expiresInMinutes: number = 30): void {
+  setTokens(accessToken: string, tokenType: string = 'bearer', expiresInMinutes: number = 300): void {
     if (typeof window === 'undefined') return;
     
     localStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, accessToken);
