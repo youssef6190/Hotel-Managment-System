@@ -38,7 +38,7 @@ export default function ProfilePage() {
 
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/profile`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/users/profile`, {
         method: 'PUT',
         headers,
         body: JSON.stringify({
@@ -81,7 +81,7 @@ export default function ProfilePage() {
 
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/change-password`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/users/change-password`, {
         method: 'PUT',
         headers,
         body: JSON.stringify({
@@ -132,7 +132,7 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/delete-account`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/users/delete-account`, {
         method: 'DELETE',
         headers
       });

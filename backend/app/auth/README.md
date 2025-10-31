@@ -42,14 +42,14 @@ login_data = {
     "email": "user@example.com",
     "password": "password123"
 }
-response = requests.post("http://localhost:8000/auth/login", json=login_data)
+response = requests.post("http://localhost:9000/auth/login", json=login_data)
 token = response.json()["access_token"]
 
 # Use token in subsequent requests
 headers = {
     "Authorization": f"Bearer {token}"
 }
-user_info = requests.get("http://localhost:8000/auth/me", headers=headers)
+user_info = requests.get("http://localhost:9000/auth/me", headers=headers)
 ```
 
 ## Backend Usage

@@ -138,7 +138,7 @@ export default function ReservationsPage() {
       if (user?.role === 'hotel_admin') {
         const headers = await authAPI.getAuthHeadersWithRefresh();
         
-        const endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/admin`;
+        const endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/hotels/admin`;
         
         const response = await fetch(endpoint, {
           headers
@@ -152,7 +152,7 @@ export default function ReservationsPage() {
         }
       } else {
         // For regular users (guests), use public endpoint without auth
-        const endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/`;
+        const endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/hotels/`;
         
         const response = await fetch(endpoint, {
           headers: {
@@ -183,7 +183,7 @@ export default function ReservationsPage() {
       // Different endpoints based on user role
       if (user?.role === 'hotel_admin') {
         // Hotel admins see reservations for their assigned hotels only
-        const hotelsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/admin`, {
+        const hotelsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/hotels/admin`, {
           headers
         });
         
@@ -193,7 +193,7 @@ export default function ReservationsPage() {
           // Get reservations for the admin's assigned hotels
           const allReservations = [];
           for (const hotel of adminHotels) {
-            const reservationsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/reservations/hotel/${hotel.id}`, {
+            const reservationsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/reservations/hotel/${hotel.id}`, {
               headers
             });
             
@@ -208,7 +208,7 @@ export default function ReservationsPage() {
         }
       } else if (user?.role === 'super_admin') {
         // Super admin sees all reservations
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/reservations/`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/reservations/`;
         const response = await fetch(endpoint, { headers });
         
         if (response.ok) {
@@ -218,7 +218,7 @@ export default function ReservationsPage() {
         }
       } else {
         // Guests see only their own reservations
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/reservations/my-reservations`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/reservations/my-reservations`;
         const response = await fetch(endpoint, { headers });
         
         if (response.ok) {
@@ -262,7 +262,7 @@ export default function ReservationsPage() {
       if (!reservation.hotel_id) return null;
       
       try {
-        const hotel = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/${reservation.hotel_id}`)
+        const hotel = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/hotels/${reservation.hotel_id}`)
           .then(res => res.ok ? res.json() : null);
         
         return { id: reservation.hotel_id, data: hotel };
@@ -277,7 +277,7 @@ export default function ReservationsPage() {
       if (!reservation.room_id) return null;
       
       try {
-        const room = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/rooms/${reservation.room_id}`)
+        const room = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/rooms/${reservation.room_id}`)
           .then(res => res.ok ? res.json() : null);
         
         return { id: reservation.room_id, data: room };
@@ -359,7 +359,7 @@ export default function ReservationsPage() {
         status: 'pending'
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/reservations/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/reservations/`, {
         method: 'POST',
         headers,
         body: JSON.stringify(reservationData)
@@ -434,7 +434,7 @@ export default function ReservationsPage() {
       const headers = await authAPI.getAuthHeadersWithRefresh();
       
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/reservations/${reservationId}/status?status=${newStatus}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/reservations/${reservationId}/status?status=${newStatus}`,
         {
           method: 'PATCH',
           headers: {
@@ -465,7 +465,7 @@ export default function ReservationsPage() {
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/my-payments`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/payments/my-payments`, {
         headers
       });
       
@@ -502,7 +502,7 @@ export default function ReservationsPage() {
         transaction_date: new Date().toISOString().split('T')[0]
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/payments/`, {
         method: 'POST',
         headers,
         body: JSON.stringify(paymentData)

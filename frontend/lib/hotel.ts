@@ -1,5 +1,5 @@
 // API utilities for hotel operations
-const API_BASE_URL = 'http://localhost:8000'; // Adjust the base URL as needed
+const API_BASE_URL = 'http://localhost:9000'; // Adjust the base URL as needed
 
 export interface Hotel {
   id: string;  // MongoDB's auto-generated _id (serialized as string) - now required

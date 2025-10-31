@@ -125,7 +125,7 @@ The system follows a **microservices-inspired modular architecture**:
    cd backend
    uvicorn main:app --reload
    ```
-   Backend will be available at: `http://localhost:8000`
+   Backend will be available at: `http://localhost:9000`
 
 2. **Start the Frontend Development Server**
    ```bash
@@ -137,8 +137,8 @@ The system follows a **microservices-inspired modular architecture**:
 ## 📚 API Documentation
 
 Once the backend is running, access the interactive API documentation:
-- **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
+- **Swagger UI**: `http://localhost:9000/docs`
+- **ReDoc**: `http://localhost:9000/redoc`
 
 ### Key API Endpoints
 

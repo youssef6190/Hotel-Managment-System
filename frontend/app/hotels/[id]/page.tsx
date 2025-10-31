@@ -50,7 +50,7 @@ export default function HotelDetailPage() {
   const fetchMinRoomPrice = async (hotelId: string) => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`http://localhost:8000/rooms/hotel/${hotelId}`, {
+      const response = await fetch(`http://localhost:9000/rooms/hotel/${hotelId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

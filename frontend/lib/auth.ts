@@ -1,6 +1,6 @@
 import tokenUtils from './tokenUtils';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000';
 export interface LoginCredentials {
   email: string;
   password: string;

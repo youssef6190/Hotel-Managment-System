@@ -23,7 +23,7 @@ This is the frontend application for Travio, built with Next.js 14, TypeScript, 
 
 - Node.js 18+ 
 - npm or yarn
-- Backend API running on `http://localhost:8000`
+- Backend API running on `http://localhost:9000`
 
 ### Installation
 
@@ -39,7 +39,7 @@ cp .env.local.example .env.local
 
 3. Update environment variables in `.env.local`:
 ```
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://localhost:9000
 ```
 
 ### Running the Application

@@ -58,7 +58,7 @@ export default function AdminUsersPage() {
       setLoading(true);
       setError(''); // Clear previous errors
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/users/`, {
         headers
       });
       
@@ -91,7 +91,7 @@ export default function AdminUsersPage() {
 
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/users/`, {
         method: 'POST',
         headers,
         body: JSON.stringify(formData)
@@ -114,7 +114,7 @@ export default function AdminUsersPage() {
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/${userId}/toggle-status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/users/${userId}/toggle-status`, {
         method: 'PUT',
         headers
       });
@@ -134,7 +134,7 @@ export default function AdminUsersPage() {
   const updateUserRole = async (userId: string, newRole: string) => {
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/${userId}/role`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/users/${userId}/role`, {
         method: 'PUT',
         headers,
         body: JSON.stringify({ role: newRole })
@@ -157,7 +157,7 @@ export default function AdminUsersPage() {
 
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/users/${userId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/users/${userId}`, {
         method: 'DELETE',
         headers
       });

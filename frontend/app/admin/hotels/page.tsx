@@ -66,7 +66,7 @@ export default function AdminHotelsPage() {
         headers = await authAPI.getAuthHeadersWithRefresh();
       }
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}${endpoint}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}${endpoint}`, {
         headers
       });
       
@@ -91,7 +91,7 @@ export default function AdminHotelsPage() {
 
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/hotels/`, {
         method: 'POST',
         headers,
         body: JSON.stringify(formData)
@@ -140,7 +140,7 @@ export default function AdminHotelsPage() {
 
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/${hotelId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/hotels/${hotelId}`, {
         method: 'DELETE',
         headers
       });

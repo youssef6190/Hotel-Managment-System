@@ -120,7 +120,7 @@ export default function PaymentsPage() {
       // Different endpoints based on user role
       if (user?.role === 'hotel_admin') {
         // Hotel admins see reservations for their assigned hotels only
-        const hotelsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/hotels/admin`, {
+        const hotelsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/hotels/admin`, {
           headers
         });
         
@@ -129,15 +129,15 @@ export default function PaymentsPage() {
           
           if (adminHotels.length > 0) {
             const hotelIds = adminHotels.map((hotel: any) => hotel.id);
-            endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/reservations/hotels/${hotelIds.join(',')}`;
+            endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/reservations/hotels/${hotelIds.join(',')}`;
           }
         }
       } else if (user?.role === 'super_admin') {
         // Super admins see all reservations
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/reservations/`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/reservations/`;
       } else {
         // Regular guests see only their own reservations
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/reservations/user/${user?.id}`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/reservations/user/${user?.id}`;
       }
       
       if (endpoint) {
@@ -163,13 +163,13 @@ export default function PaymentsPage() {
       // Different endpoints based on user role
       if (user?.role === 'super_admin') {
         // Super admins see all payments
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/payments/`;
       } else if (user?.role === 'hotel_admin') {
         // Hotel admins see payments for their managed hotels
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/my-hotel-payments`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/payments/my-hotel-payments`;
       } else {
         // Regular guests see only their own payments
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/my-payments`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/payments/my-payments`;
       }
       
       const response = await fetch(endpoint, { headers });
@@ -205,7 +205,7 @@ export default function PaymentsPage() {
         transaction_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
       };
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/payments/`, {
         method: 'POST',
         headers,
         body: JSON.stringify(paymentData)
@@ -239,7 +239,7 @@ export default function PaymentsPage() {
     try {
       const headers = await authAPI.getAuthHeadersWithRefresh();
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/${paymentId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/payments/${paymentId}`, {
         method: 'DELETE',
         headers
       });
@@ -265,7 +265,7 @@ export default function PaymentsPage() {
       const headers = await authAPI.getAuthHeadersWithRefresh();
       
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payments/${paymentId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9000'}/payments/${paymentId}`,
         {
           method: 'PATCH',
           headers: {
